@@ -18,7 +18,6 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import unittest
 import uuid
 
@@ -28,6 +27,8 @@ import webtest
 from checkmate.common.git import manager
 from checkmate.common.git import middleware
 
+TEST_PATH = '/tmp/checkmate/test'
+
 
 class MockWsgiApp(object):
     """Mock class for WsgiApp."""
@@ -36,14 +37,6 @@ class MockWsgiApp(object):
 
     def __call__(self, env, start_response):
         assert False, "No calls should get to backend"
-
-
-def _start_response():
-    """Mock for _start_response that does nothing."""
-    pass
-
-
-TEST_PATH = '/tmp/checkmate/test'
 
 
 class TestCloneSimple(unittest.TestCase):
@@ -117,5 +110,5 @@ class TestCloneSimple(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    from checkmate import test as cmtest
-    cmtest.run_with_params(sys.argv[:])
+    from checkmate import test
+    test.run_with_params()
