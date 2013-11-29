@@ -136,10 +136,10 @@ class Option(object):
     """Holds a configuration option and the names and locations for it.
 
     Instantiate options using the same arguments as you would for an
-    add_arguments call in argparse. However, you have tow additional kwargs
+    add_arguments call in argparse. However, you have two additional kwargs
     available:
 
-        env: the name fo the environment vasriable to use for this option
+        env: the name of the environment variable to use for this option
         ini_section: the ini file section to look this value up from
     """
 
