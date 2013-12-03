@@ -203,6 +203,7 @@ class Config(object):
         self._values = {option.name: option.default
                         for option in self._options}
         self._parser = argparse.ArgumentParser(**parser_kwargs)
+        self.pass_thru_args = []
 
     @property
     def prog(self):
@@ -264,8 +265,12 @@ class Config(object):
         parser = self.build_parser(options=options)
         parsed, extras = parser.parse_known_args(argv[1:])
         if extras:
-            raise AttributeError("Unrecognized arguments: %s" %
-                                 ' ,'.join(extras))
+            valid, pass_thru = self.parse_passthru_args(argv[1:])
+            parsed, extras = parser.parse_known_args(valid)
+            if extras:
+                raise AttributeError("Unrecognized arguments: %s" %
+                                     ' ,'.join(extras))
+            self.pass_thru_args = pass_thru + extras
         return vars(parsed)
 
     def parse_env(self):
@@ -333,6 +338,18 @@ class Config(object):
 
         self._values = results
         return self
+
+    @staticmethod
+    def parse_passthru_args(argv):
+        """Handles arguments to be passed thru to a subprocess using '--'.
+
+        :returns: tuple of two lists; args and pass-thru-args
+        """
+        dashdash = argv.index("--")
+        if dashdash >= 0:
+            return argv[0:dashdash - 1], argv[dashdash + 1:]
+        else:
+            return argv, []
 
     def __repr__(self):
         return "<Config %s>" % ', '.join([
