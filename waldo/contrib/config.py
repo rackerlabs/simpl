@@ -345,11 +345,13 @@ class Config(object):
 
         :returns: tuple of two lists; args and pass-thru-args
         """
-        dashdash = argv.index("--")
-        if dashdash >= 0:
-            return argv[0:dashdash - 1], argv[dashdash + 1:]
-        else:
-            return argv, []
+        if '--' in argv:
+            dashdash = argv.index("--")
+            if dashdash == 0:
+                return argv[1:], []
+            elif dashdash > 0:
+                return argv[0:dashdash], argv[dashdash + 1:]
+        return argv, []
 
     def __repr__(self):
         return "<Config %s>" % ', '.join([
