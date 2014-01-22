@@ -27,7 +27,7 @@ Example test.py file:
 
 
     def main(argv):
-        '''Test.'''
+        """Test."""
         options = [
             config.Option("xpos",
                           help="positional argument",
