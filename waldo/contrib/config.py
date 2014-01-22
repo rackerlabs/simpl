@@ -322,12 +322,12 @@ class Config(object):
                 results[option.name] = option.type(secret)
         return results
 
-    def parse(self, argv=None, namespace=None):
+    def parse(self, argv=None, keyring_namespace=None):
         """."""
         defaults = self.get_defaults()
         args = self.parse_cli(argv=argv)
         env = self.parse_env()
-        secrets = self.parse_keyring(namespace)
+        secrets = self.parse_keyring(keyring_namespace)
         ini = self.parse_ini()
 
         results = defaults
