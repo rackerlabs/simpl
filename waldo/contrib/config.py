@@ -146,6 +146,7 @@ except ImportError:
 
 
 class Option(object):
+
     """Holds a configuration option and the names and locations for it.
 
     Instantiate options using the same arguments as you would for an
@@ -154,6 +155,7 @@ class Option(object):
 
         env: the name of the environment variable to use for this option
         ini_section: the ini file section to look this value up from
+
     """
 
     def __init__(self, *args, **kwargs):
@@ -181,6 +183,7 @@ class Option(object):
         """The type of the option.
 
         Should be a callable to parse options.
+
         """
         return self.kwargs.get("type", str)
 
@@ -202,6 +205,7 @@ class Option(object):
 
 
 class Config(object):
+
     """Parses configuration sources."""
 
     def __init__(self, options=None, ini_paths=None, **parser_kwargs):
@@ -242,9 +246,7 @@ class Config(object):
         return len(self._values)
 
     def get(self, key, *args):
-        """
-        Return the value for key if it exists otherwise the default.
-        """
+        """Return the value for key if it exists otherwise the default."""
         return self._values.get(key, *args)
 
     def __getattr__(self, attr):
@@ -308,6 +310,7 @@ class Config(object):
         :param paths: list of paths to files to parse (uses ConfigParse logic).
                       If not supplied, uses the ini_paths value supplied on
                       initialization.
+
         """
         results = {}
         config = ConfigParser.SafeConfigParser()
