@@ -11,8 +11,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-"""
-Configuration Parser
+
+r"""Configuration Parser.
 
 Configurable parser that will parse config files, environment variables,
 keyring, and command-line arguments.
@@ -131,8 +131,8 @@ Example results:
     xarg:   command-line
     xfarg:  command-line
 
-
 """
+
 import argparse
 import ConfigParser
 import copy
@@ -213,6 +213,7 @@ class Config(object):
 
         :param ini_paths: optional paths to ini files to look up values from
         :param parser_kwargs: kwargs used to init argparse parsers.
+
         """
         self._parser_kwargs = parser_kwargs or {}
         self._ini_paths = ini_paths or []
@@ -357,9 +358,10 @@ class Config(object):
 
     @staticmethod
     def parse_passthru_args(argv):
-        """Handles arguments to be passed thru to a subprocess using '--'.
+        """Handle arguments to be passed thru to a subprocess using '--'.
 
         :returns: tuple of two lists; args and pass-thru-args
+
         """
         if '--' in argv:
             dashdash = argv.index("--")
@@ -375,12 +377,12 @@ class Config(object):
 
 
 def comma_separated_strings(value):
-    """Handles comma-separated arguments passed in command-line."""
+    """Handle comma-separated arguments passed in command-line."""
     return map(str, value.split(","))
 
 
 def comma_separated_pairs(value):
-    """Handles comma-separated key/values passed in command-line."""
+    """Handle comma-separated key/values passed in command-line."""
     pairs = value.split(",")
     results = {}
     for pair in pairs:
