@@ -159,6 +159,7 @@ class Option(object):
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialize options."""
         self.args = args or []
         self.kwargs = kwargs or {}
 
@@ -229,21 +230,27 @@ class Config(object):
         return self._parser.prog
 
     def __getitem__(self, key):
+        """Get item from config."""
         return self._values[key]
 
     def __setitem__(self, key, value):
+        """Set item in config."""
         self._values[key] = value
 
     def __delitem__(self, key):
+        """Delete item from config."""
         del self._values[key]
 
     def __contains__(self, key):
+        """Get key."""
         return key in self._values
 
     def __iter__(self):
+        """Iterate config."""
         return iter(self._values)
 
     def __len__(self):
+        """Check number of config options."""
         return len(self._values)
 
     def get(self, key, *args):
@@ -251,6 +258,7 @@ class Config(object):
         return self._values.get(key, *args)
 
     def __getattr__(self, attr):
+        """Get attribute."""
         if attr in self._values:
             return self._values[attr]
         else:
@@ -290,6 +298,7 @@ class Config(object):
         return vars(parsed)
 
     def parse_env(self):
+        """Parse environment variables."""
         results = {}
         for option in self._options:
             env_var = option.kwargs.get('env')
