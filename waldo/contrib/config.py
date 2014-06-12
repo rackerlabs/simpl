@@ -136,6 +136,7 @@ Example results:
 import argparse
 import ConfigParser
 import copy
+import logging
 import os
 import sys
 
@@ -143,6 +144,8 @@ try:
     import keyring
 except ImportError:
     keyring = None
+
+LOG = logging.getLogger(__name__)
 
 
 class Option(object):
