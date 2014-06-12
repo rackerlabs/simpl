@@ -385,6 +385,19 @@ class Config(object):
             '%s=%s' % (k, v) for k, v in self._values.iteritems()])
 
 
+def normalized_path(value, must_exist=False):
+    """Normalize and expand a shorthand or relative path."""
+    if not value:
+        return
+    norm = os.path.normpath(value)
+    norm = os.path.abspath(os.path.expanduser(norm))
+    if must_exist:
+        if not os.path.exists(norm):
+            raise ValueError("%s is not a valid path." % norm)
+        LOG.debug("%s exists.", norm)
+    return norm
+
+
 def comma_separated_strings(value):
     """Handle comma-separated arguments passed in command-line."""
     return map(str, value.split(","))
