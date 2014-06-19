@@ -179,6 +179,22 @@ class Option(object):
                 del kwargs['ini_section']
             except KeyError:
                 pass
+            if 'mutually_exclusive_group' in kwargs:
+                groupname = kwargs.pop('mutually_exclusive_group')
+                megroup = [grp for grp in parser._mutually_exclusive_groups
+                           if grp.title == groupname]
+                if megroup:
+                    if len(megroup) != 1:
+                        raise ValueError(
+                            "Bug: Mutiple mutually exclusive "
+                            "groups with the same title were found.")
+                    megroup = megroup[0]
+                    megroup.add_argument(*self.args, **kwargs)
+                else:
+                    megroup = parser.add_mutually_exclusive_group()
+                    megroup.title = groupname
+                    megroup.add_argument(*self.args, **kwargs)
+                return
         kwargs.update(override_kwargs)
         parser.add_argument(*self.args, **kwargs)
 
