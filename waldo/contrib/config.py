@@ -163,6 +163,13 @@ class Option(object):
         """Initialize options."""
         self.args = args or []
         self.kwargs = kwargs or {}
+        if 'extra' in kwargs:
+            extra = kwargs.pop('extra', None)
+            if not isinstance(extra, dict):
+                raise TypeError("Option %s 'extra' should be a dictionary."
+                                % self.name)
+            for key, val in extra.items():
+                setattr(self, key, val)
 
     def add_argument(self, parser, permissive=False, **override_kwargs):
         """Add an option to a an argparse parser.
@@ -190,6 +197,7 @@ class Option(object):
             except KeyError:
                 pass
             if 'mutually_exclusive_group' in kwargs:
+                required = kwargs.pop('required', None)
                 groupname = kwargs.pop('mutually_exclusive_group')
                 megroup = [grp for grp in parser._mutually_exclusive_groups
                            if grp.title == groupname]
@@ -201,7 +209,7 @@ class Option(object):
                     megroup = megroup[0]
                     megroup.add_argument(*self.args, **kwargs)
                 else:
-                    megroup = parser.add_mutually_exclusive_group()
+                    megroup = parser.add_mutually_exclusive_group(required=required)
                     megroup.title = groupname
                     megroup.add_argument(*self.args, **kwargs)
                 return
@@ -427,6 +435,14 @@ class Config(object):
         """Display configured values when representing instance."""
         return "<Config %s>" % ', '.join([
             '%s=%s' % (k, v) for k, v in self._values.iteritems()])
+
+
+def read_from(value, must_exist=False):
+
+    p = normalized_path(value, must_exist=must_exist)
+    with open(p, 'r') as f:
+        read = f.read()
+    return read
 
 
 def normalized_path(value, must_exist=False):
