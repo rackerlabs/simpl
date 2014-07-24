@@ -130,7 +130,6 @@ Example results:
     karg:   keyring
     xarg:   command-line
     xfarg:  command-line
-
 """
 
 import argparse
@@ -143,7 +142,7 @@ import sys
 try:
     import keyring
 except ImportError:
-    keyring = None
+    keyring = None  # pylint: disable=C0103
 
 LOG = logging.getLogger(__name__)
 
@@ -158,7 +157,6 @@ class Option(object):
 
         env: the name of the environment variable to use for this option
         ini_section: the ini file section to look this value up from
-
     """
 
     def __init__(self, *args, **kwargs):
@@ -203,7 +201,6 @@ class Option(object):
         """The type of the option.
 
         Should be a callable to parse options.
-
         """
         return self.kwargs.get("type", str)
 
@@ -233,7 +230,6 @@ class Config(object):
 
         :param ini_paths: optional paths to ini files to look up values from
         :param parser_kwargs: kwargs used to init argparse parsers.
-
         """
         self._parser_kwargs = parser_kwargs or {}
         self._ini_paths = ini_paths or []
@@ -285,7 +281,11 @@ class Config(object):
                                  % attr)
 
     def build_parser(self, options, **override_kwargs):
-        """."""
+        """Construct an argparser from supplied options.
+
+        :keyword override_kwargs: keyword arguments to override when calling
+            parser constructor.
+        """
         kwargs = copy.copy(self._parser_kwargs)
         kwargs.update(override_kwargs)
         if 'fromfile_prefix_chars' not in kwargs:
@@ -339,7 +339,6 @@ class Config(object):
         :param paths: list of paths to files to parse (uses ConfigParse logic).
                       If not supplied, uses the ini_paths value supplied on
                       initialization.
-
         """
         results = {}
         config = ConfigParser.SafeConfigParser()
@@ -355,7 +354,7 @@ class Config(object):
         return results
 
     def parse_keyring(self, namespace=None):
-        """."""
+        """Find settings from keyring."""
         results = {}
         if not keyring:
             return results
@@ -368,7 +367,7 @@ class Config(object):
         return results
 
     def parse(self, argv=None, keyring_namespace=None):
-        """."""
+        """Find settings from all sources."""
         defaults = self.get_defaults()
         args = self.parse_cli(argv=argv)
         env = self.parse_env()
@@ -389,7 +388,6 @@ class Config(object):
         """Handle arguments to be passed thru to a subprocess using '--'.
 
         :returns: tuple of two lists; args and pass-thru-args
-
         """
         if '--' in argv:
             dashdash = argv.index("--")
@@ -400,6 +398,7 @@ class Config(object):
         return argv, []
 
     def __repr__(self):
+        """Display configured values when representing instance."""
         return "<Config %s>" % ', '.join([
             '%s=%s' % (k, v) for k, v in self._values.iteritems()])
 
@@ -419,7 +418,7 @@ def normalized_path(value, must_exist=False):
 
 def comma_separated_strings(value):
     """Handle comma-separated arguments passed in command-line."""
-    return map(str, value.split(","))
+    return [str(v) for v in value.split(",")]
 
 
 def comma_separated_pairs(value):
