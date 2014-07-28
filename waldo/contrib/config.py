@@ -173,6 +173,9 @@ class Option(object):
         kwargs = {}
         if self.kwargs:
             kwargs = copy.copy(self.kwargs)
+            if 'env' in kwargs and 'help' in kwargs:
+                kwargs['help'] = "%s (or set %s)" % (kwargs['help'],
+                                                  kwargs['env'])
             if permissive:
                 try:
                     del kwargs['required']
@@ -298,6 +301,8 @@ class Config(object):
             required arguments.
         """
         kwargs = copy.copy(self._parser_kwargs)
+        kwargs.setdefault('formatter_class',
+                          argparse.ArgumentDefaultsHelpFormatter)
         kwargs.update(override_kwargs)
         if 'fromfile_prefix_chars' not in kwargs:
             kwargs['fromfile_prefix_chars'] = '@'
