@@ -15,7 +15,10 @@
 #    under the License.
 
 """Tests for common config."""
+import os
 import unittest
+
+import mock
 
 from waldo.contrib import config
 
@@ -30,6 +33,52 @@ class TestParsers(unittest.TestCase):
         expected = dict(A='1', B='2', C='3')
         result = config.comma_separated_pairs("A=1,B=2,C=3")
         self.assertEqual(result, expected)
+
+
+class TestConfig(unittest.TestCase):
+    def test_instantiation(self):
+        empty = config.Config(options=[])
+        self.assertIsInstance(empty, config.Config)
+        self.assertEqual(empty._values, {})
+
+    def test_defaults(self):
+        cfg = config.Config(options=[
+            config.Option('--one', default=1),
+            config.Option('--a', default='a'),
+            config.Option('--none'),
+        ])
+        cfg.parse([])
+        self.assertEquals(cfg.one, 1)
+        self.assertEquals(cfg.a, 'a')
+        self.assertIsNone(cfg.none)
+
+    def test_items(self):
+        cfg = config.Config(options=[
+            config.Option('--one', default=1),
+            config.Option('--none'),
+        ])
+        cfg.parse([])
+        self.assertEquals(cfg.one, cfg['one'])
+        self.assertEquals(cfg['one'], 1)
+        self.assertIsNone(cfg['none'])
+
+    @mock.patch.dict('os.environ', {'TEST_TWO': '2'})
+    def test_required(self):
+        self.assertEqual(os.environ['TEST_TWO'], '2')
+        cfg = config.Config(options=[
+            config.Option('--one', default=1, required=True),
+            config.Option('--two', required=True, env='TEST_TWO'),
+        ])
+        cfg.parse([])
+        self.assertEquals(cfg.one, 1)
+        self.assertEquals(cfg.two, '2')
+
+    def test_required_negative(self):
+        cfg = config.Config(options=[
+            config.Option('--required', required=True),
+        ])
+        with self.assertRaises(SystemExit):
+            cfg.parse([])
 
 
 if __name__ == '__main__':
