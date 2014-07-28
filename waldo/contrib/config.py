@@ -164,11 +164,20 @@ class Option(object):
         self.args = args or []
         self.kwargs = kwargs or {}
 
-    def add_argument(self, parser, **override_kwargs):
-        """Add an option to a an argparse parser."""
+    def add_argument(self, parser, permissive=False, **override_kwargs):
+        """Add an option to a an argparse parser.
+
+        :keyword permissive: when true, build a parser that does not validate
+            required arguments.
+        """
         kwargs = {}
         if self.kwargs:
             kwargs = copy.copy(self.kwargs)
+            if permissive:
+                try:
+                    del kwargs['required']
+                except KeyError:
+                    pass
             try:
                 del kwargs['env']
             except KeyError:
@@ -280,11 +289,13 @@ class Config(object):
             raise AttributeError("'config' object has no attribute '%s'"
                                  % attr)
 
-    def build_parser(self, options, **override_kwargs):
+    def build_parser(self, options, permissive=False, **override_kwargs):
         """Construct an argparser from supplied options.
 
         :keyword override_kwargs: keyword arguments to override when calling
             parser constructor.
+        :keyword permissive: when true, build a parser that does not validate
+            required arguments.
         """
         kwargs = copy.copy(self._parser_kwargs)
         kwargs.update(override_kwargs)
@@ -293,24 +304,29 @@ class Config(object):
         parser = argparse.ArgumentParser(**kwargs)
         if options:
             for option in options:
-                option.add_argument(parser)
+                option.add_argument(parser, permissive=permissive)
         return parser
 
-    def parse_cli(self, argv=None):
-        """Parse command-line arguments into values."""
-        if not argv:
+    def parse_cli(self, argv=None, permissive=False):
+        """Parse command-line arguments into values.
+
+        :keyword permissive: when true, does not validate required or extra
+            arguments.
+        """
+        if argv is None:
             argv = sys.argv
         options = []
         for option in self._options:
-            temp = Option(*option.args, **option.kwargs)
-            temp.kwargs['default'] = argparse.SUPPRESS
+            kwargs = option.kwargs.copy()
+            kwargs['default'] = argparse.SUPPRESS
+            temp = Option(*option.args, **kwargs)
             options.append(temp)
-        parser = self.build_parser(options=options)
+        parser = self.build_parser(options, permissive=permissive)
         parsed, extras = parser.parse_known_args(argv[1:])
         if extras:
             valid, pass_thru = self.parse_passthru_args(argv[1:])
             parsed, extras = parser.parse_known_args(valid)
-            if extras:
+            if extras and not permissive:
                 raise AttributeError("Unrecognized arguments: %s" %
                                      ' ,'.join(extras))
             self.pass_thru_args = pass_thru + extras
@@ -328,7 +344,7 @@ class Config(object):
 
     def get_defaults(self):
         """Use argparse to determine and return dict of defaults."""
-        parser = self.build_parser(options=self._options)
+        parser = self.build_parser(self._options, permissive=True)
         parsed, _ = parser.parse_known_args([])
         return vars(parsed)
 
@@ -369,7 +385,7 @@ class Config(object):
     def parse(self, argv=None, keyring_namespace=None):
         """Find settings from all sources."""
         defaults = self.get_defaults()
-        args = self.parse_cli(argv=argv)
+        args = self.parse_cli(argv=argv, permissive=True)
         env = self.parse_env()
         secrets = self.parse_keyring(keyring_namespace)
         ini = self.parse_ini()
@@ -380,6 +396,11 @@ class Config(object):
         results.update(env)
         results.update(args)
 
+        # Run validation
+        for option in self._options:
+            if option.kwargs.get('required'):
+                if option.name not in results or results[option.name] is None:
+                    raise SystemExit(2)
         self._values = results
         return self
 
