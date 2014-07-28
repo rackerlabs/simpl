@@ -175,7 +175,7 @@ class Option(object):
             kwargs = copy.copy(self.kwargs)
             if 'env' in kwargs and 'help' in kwargs:
                 kwargs['help'] = "%s (or set %s)" % (kwargs['help'],
-                                                  kwargs['env'])
+                                                     kwargs['env'])
             if permissive:
                 try:
                     del kwargs['required']
