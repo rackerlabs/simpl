@@ -200,12 +200,15 @@ class Option(object):
                             "Bug: Mutiple mutually exclusive "
                             "groups with the same title were found.")
                     megroup = megroup[0]
-                    megroup.add_argument(*self.args, **kwargs)
+                    action = megroup.add_argument(*self.args, **kwargs)
                 else:
                     megroup = parser.add_mutually_exclusive_group(
                         required=required)
                     megroup.title = groupname
-                    megroup.add_argument(*self.args, **kwargs)
+                    action = megroup.add_argument(*self.args, **kwargs)
+                self._megroup = megroup
+                self._action = action
+
                 return
         kwargs.update(override_kwargs)
         parser.add_argument(*self.args, **kwargs)
@@ -404,10 +407,24 @@ class Config(object):
         results.update(args)
 
         # Run validation
+        raise_for_group = {}
         for option in self._options:
             if option.kwargs.get('required'):
                 if option.name not in results or results[option.name] is None:
-                    raise SystemExit(2)
+                    if getattr(option, '_megroup', None):
+                        raise_for_group.setdefault(option._megroup, [])
+                        raise_for_group[option._megroup].append(option._action)
+                    else:
+                        raise SystemExit("'%s' is required. See --help "
+                                         "for more info." % option.name)
+                else:
+                    if getattr(option, '_megroup', None):
+                        raise_for_group.pop(option._megroup, None)
+        if raise_for_group:
+            optstrings = [str(k.option_strings)
+                          for k in raise_for_group.values()[0]]
+            msg = "One of %s required. " % " ,".join(optstrings)
+            raise SystemExit(msg + "See --help for more info.")
         self._values = results
         return self
 
