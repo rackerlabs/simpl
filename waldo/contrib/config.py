@@ -130,6 +130,22 @@ Example results:
     karg:   keyring
     xarg:   command-line
     xfarg:  command-line
+
+Another common pattern is to support supplying a key as a file or string value.
+That can be accomplished with mutually exclusive keys (a standard feature of
+argparser), the `dest` parameter (also a standard argparse feature), and the
+`read_from` type.
+
+    contrib.config.Option(
+        '--my-pkey',
+        mutually_exclusive_group='my_key',
+        env='MY_PKEY'),
+    contrib.config.Option(
+        '--my-pkey-file',
+        type=contrib.config.read_from,  # get the file contents (or err out)
+        dest='my_pkey',  # write to the same dest as the string option
+        mutually_exclusive_group='my_key',  # only one options should be set
+        env='MY_PKEY_FILE')
 """
 
 import argparse
@@ -231,6 +247,13 @@ class Option(object):
                 continue
             else:
                 return arg.replace("-", "_")
+
+    @property
+    def dest(self):
+        """The destination name of the option as determined from the args."""
+        if 'dest' in self.kwargs:
+            return self.kwargs['dest']
+        return self.name
 
     @property
     def default(self):
@@ -349,7 +372,7 @@ class Config(object):
             env_var = option.kwargs.get('env')
             if env_var and env_var in os.environ:
                 value = os.environ[env_var]
-                results[option.name] = option.type(value)
+                results[option.dest] = option.type(value)
         return results
 
     def get_defaults(self):
@@ -374,7 +397,7 @@ class Config(object):
             if ini_section:
                 try:
                     value = config.get(ini_section, option.name)
-                    results[option.name] = option.type(value)
+                    results[option.dest] = option.type(value)
                 except ConfigParser.NoSectionError:
                     pass
         return results
@@ -389,7 +412,7 @@ class Config(object):
         for option in self._options:
             secret = keyring.get_password(namespace, option.name)
             if secret:
-                results[option.name] = option.type(secret)
+                results[option.dest] = option.type(secret)
         return results
 
     def parse(self, argv=None, keyring_namespace=None):
@@ -410,7 +433,7 @@ class Config(object):
         raise_for_group = {}
         for option in self._options:
             if option.kwargs.get('required'):
-                if option.name not in results or results[option.name] is None:
+                if option.dest not in results or results[option.dest] is None:
                     if getattr(option, '_megroup', None):
                         raise_for_group.setdefault(option._megroup, [])
                         raise_for_group[option._megroup].append(option._action)
@@ -448,24 +471,23 @@ class Config(object):
             '%s=%s' % (k, v) for k, v in self._values.iteritems()])
 
 
-def read_from(value, must_exist=False):
+def read_from(value):
     """Read file and return contents."""
-    path = normalized_path(value, must_exist=must_exist)
+    path = normalized_path(value)
+    if not os.path.exists(path):
+        raise argparse.ArgumentTypeError("%s is not a valid path." % path)
+    LOG.debug("%s exists.", path)
     with open(path, 'r') as reader:
         read = reader.read()
     return read
 
 
-def normalized_path(value, must_exist=False):
+def normalized_path(value):
     """Normalize and expand a shorthand or relative path."""
     if not value:
         return
     norm = os.path.normpath(value)
     norm = os.path.abspath(os.path.expanduser(norm))
-    if must_exist:
-        if not os.path.exists(norm):
-            raise ValueError("%s is not a valid path." % norm)
-        LOG.debug("%s exists.", norm)
     return norm
 
 
