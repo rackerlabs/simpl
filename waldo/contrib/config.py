@@ -508,5 +508,4 @@ def comma_separated_pairs(value):
 
 def parse_key_format(value):
     """Handle string formats of key files."""
-    result = value.lstrip("'").strip("'")
-    return result.replace('\\n', '\n')
+    return value.strip("'").replace('\\n', '\n')
