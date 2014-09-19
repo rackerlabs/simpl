@@ -1,13 +1,17 @@
+"""Threadlocal."""
 import threading
 
 
-threadlocal = threading.local()
+THREADLOCAL = threading.local()
+
 
 def threadlocal_var(varname, factory, *a, **k):
-  v = getattr(threadlocal, varname, None)
-  if v is None:
-    v = factory(*a, **k)
-    setattr(threadlocal, varname, v)
-  return v
+    """Return or set a threadlocal attribute."""
+    val = getattr(THREADLOCAL, varname, None)
+    if val is None:
+        val = factory(*a, **k)
+        setattr(THREADLOCAL, varname, val)
+    return val
 
-threadlocaldict = threadlocal_var('threadlocal_context', dict)
+
+THREADLOCALDICT = threadlocal_var('threadlocal_context', dict)
