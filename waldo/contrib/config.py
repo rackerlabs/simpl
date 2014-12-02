@@ -459,10 +459,7 @@ class Config(object):
         """
         if '--' in argv:
             dashdash = argv.index("--")
-            if dashdash == 0:
-                return argv[1:], []
-            elif dashdash > 0:
-                return argv[0:dashdash], argv[dashdash + 1:]
+            return argv[:dashdash], argv[dashdash + 1:]
         return argv, []
 
     def __repr__(self):
