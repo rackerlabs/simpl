@@ -363,6 +363,10 @@ class Config(object):
                 raise AttributeError("Unrecognized arguments: %s" %
                                      ' ,'.join(extras))
             self.pass_thru_args = pass_thru + extras
+        else:
+            # maybe reset pass_thru_args on subsequent calls
+            # parse() -> parse_cli() is called post-plugin-init
+            self.pass_thru_args = []
         return vars(parsed)
 
     def parse_env(self):
