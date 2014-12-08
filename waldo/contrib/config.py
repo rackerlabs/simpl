@@ -419,7 +419,7 @@ class Config(object):
                 results[option.dest] = option.type(secret)
         return results
 
-    def parse(self, argv=None, keyring_namespace=None):
+    def load_options(self, argv=None, keyring_namespace=None):
         """Find settings from all sources."""
         defaults = self.get_defaults()
         args = self.parse_cli(argv=argv, permissive=True)
@@ -432,7 +432,12 @@ class Config(object):
         results.update(secrets)
         results.update(env)
         results.update(args)
+        return results
 
+    def parse(self, argv=None, keyring_namespace=None):
+        """Find settings from all sources."""
+        results = self.load_options(argv=argv,
+                                   keyring_namespace=keyring_namespace)
         # Run validation
         raise_for_group = {}
         for option in self._options:
