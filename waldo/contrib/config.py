@@ -173,6 +173,8 @@ class Option(object):
 
         env: the name of the environment variable to use for this option
         ini_section: the ini file section to look this value up from
+        mutually_exclusive_group: the name of the mutually exclusive group
+                                  this option will be a part of.
     """
 
     def __init__(self, *args, **kwargs):
