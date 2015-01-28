@@ -1,4 +1,4 @@
-# Copyright (c) 2011-2013 Rackspace Hosting
+# Copyright (c) 2011-2015 Rackspace US, Inc.
 # All Rights Reserved.
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -11,6 +11,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+#
+# pylint: disable=W0212
 
 r"""Configuration Parser.
 
@@ -149,6 +151,7 @@ argparser), the `dest` parameter (also a standard argparse feature), and the
 """
 
 import argparse
+import collections
 import ConfigParser
 import copy
 import logging
@@ -181,6 +184,8 @@ class Option(object):
         """Initialize options."""
         self.args = args or []
         self.kwargs = kwargs or {}
+        self._megroup = None
+        self._action = None
 
     def add_argument(self, parser, permissive=False, **override_kwargs):
         """Add an option to a an argparse parser.
@@ -263,7 +268,7 @@ class Option(object):
         return self.kwargs.get("default")
 
 
-class Config(object):
+class Config(collections.MutableMapping):
 
     """Parses configuration sources."""
 
@@ -280,6 +285,13 @@ class Config(object):
                         for option in self._options}
         self._parser = argparse.ArgumentParser(**parser_kwargs)
         self.pass_thru_args = []
+
+    @classmethod
+    def init(cls, *args, **kwargs):
+        """Initialize the config like as you would a regular dict."""
+        instance = cls()
+        instance._values.update(dict(*args, **kwargs))
+        return instance
 
     @property
     def prog(self):
@@ -298,10 +310,6 @@ class Config(object):
         """Delete item from config."""
         del self._values[key]
 
-    def __contains__(self, key):
-        """Get key."""
-        return key in self._values
-
     def __iter__(self):
         """Iterate config."""
         return iter(self._values)
@@ -309,10 +317,6 @@ class Config(object):
     def __len__(self):
         """Check number of config options."""
         return len(self._values)
-
-    def get(self, key, *args):
-        """Return the value for key if it exists otherwise the default."""
-        return self._values.get(key, *args)
 
     def __getattr__(self, attr):
         """Get attribute."""
@@ -371,14 +375,23 @@ class Config(object):
             self.pass_thru_args = []
         return vars(parsed)
 
-    def parse_env(self):
+    def parse_env(self, env=None, namespace=None):
         """Parse environment variables."""
+        env = env or os.environ
         results = {}
+        if not namespace:
+            namespace = self.prog
+        namespace = namespace.upper()
         for option in self._options:
             env_var = option.kwargs.get('env')
-            if env_var and env_var in os.environ:
-                value = os.environ[env_var]
+            default_env = "%s_%s" % (namespace, option.name.upper())
+            if env_var and env_var in env:
+                value = env[env_var]
                 results[option.dest] = option.type(value)
+            elif default_env in env:
+                value = env[default_env]
+                results[option.dest] = option.type(value)
+
         return results
 
     def get_defaults(self):
@@ -439,7 +452,7 @@ class Config(object):
     def parse(self, argv=None, keyring_namespace=None):
         """Find settings from all sources."""
         results = self.load_options(argv=argv,
-                                   keyring_namespace=keyring_namespace)
+                                    keyring_namespace=keyring_namespace)
         # Run validation
         raise_for_group = {}
         for option in self._options:
@@ -476,7 +489,7 @@ class Config(object):
     def __repr__(self):
         """Display configured values when representing instance."""
         return "<Config %s>" % ', '.join([
-            '%s=%s' % (k, v) for k, v in self._values.iteritems()])
+            '%s=%s' % (k, v) for k, v in self.items()])
 
 
 def read_from(value):
