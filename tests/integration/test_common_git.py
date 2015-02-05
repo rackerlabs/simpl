@@ -16,6 +16,7 @@
 import base64
 import json
 import os
+import tempfile
 import shutil
 import subprocess
 import unittest
@@ -24,6 +25,9 @@ import uuid
 import mock
 import webtest
 
+from checkmate.common import git
+from checkmate.common import backports
+from checkmate import exceptions as cmexc
 from checkmate.common.git import manager
 from checkmate.common.git import middleware
 
@@ -108,6 +112,145 @@ class TestCloneSimple(unittest.TestCase):
         self.assertEqual(res.content_type, 'text/plain')
         self.assertIsNone(res.body)
 
+
+class TestGitCommands(unittest.TestCase):
+
+    init_success = "initialized empty git repository"
+
+    def setUp(self):
+        self.tempdir = backports.TemporaryDirectory(prefix=__name__)
+        self.repo = git.GitRepo(self.tempdir.name)
+
+    def tearDown(self):
+        self.tempdir.cleanup()
+
+    def test_initialize_repository(self):
+        output = self.repo.init()
+        self.assertIn(
+            self.init_success, output['stdout'].lower())
+
+    def test_init_and_clone_from(self):
+        output = self.repo.init()
+        self.assertIn(self.init_success, output['stdout'].lower())
+        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
+        repo_b = git.GitRepo(repo_b_tempdir.name)
+        output = repo_b.clone(self.repo.repo_dir)
+        msg = "cloning into '%s'" % repo_b.repo_dir.lower()
+        self.assertIn(msg, output['stdout'].lower())
+
+    def test_tag(self):
+        test_tag = 'thanks_for_the_tag'
+        self.repo.init()
+        # needs a commit, o/w fails: "No such ref: HEAD"
+        self.repo.commit()
+        self.repo.tag(test_tag)
+        tag_list = self.repo.list_tags()
+        self.assertIn(test_tag, tag_list)
+
+    def test_clone_brings_tags(self):
+        cloned_tag = 'tag_from_repo_A_for_repo_B'
+        self.repo.init()
+        self.repo.commit()
+        self.repo.tag(cloned_tag)
+
+        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
+        repo_b = git.GitRepo(repo_b_tempdir.name)
+        repo_b.clone(self.repo.repo_dir)
+        tag_list = repo_b.list_tags()
+        self.assertIn(cloned_tag, tag_list)
+
+    def test_duplicate_tag_updates(self):
+        test_tag = 'duplicate_me'
+        self.repo.init()
+        # needs a commit, otherwise fails w/ "No such ref: HEAD"
+        self.repo.commit()
+        self.repo.tag(test_tag)
+        self.repo.commit()
+        output = self.repo.tag(test_tag)
+        msg = "updated tag '%s'" % test_tag
+        self.assertIn(msg.lower(), output['stdout'].lower())
+
+    def test_duplicate_tag_fails_without_force(self):
+        test_tag = 'duplicate_me'
+        self.repo.init()
+        # needs a commit, o/w fails: "No such ref: HEAD"
+        self.repo.commit()
+        self.repo.tag(test_tag)
+        self.assertRaises(
+            cmexc.CheckmateCalledProcessError, self.repo.tag,
+            test_tag, force=False)
+
+    def test_add_and_commit_change(self):
+        self.repo.init()
+        temp = tempfile.NamedTemporaryFile(
+            dir=self.repo.repo_dir, suffix='.cmtest')
+        temp.write("calmer than you are")
+        msg = "1 file changed"
+        output = self.repo.commit(message="dudeism")
+        self.assertIn(msg.lower(), output['stdout'].lower())
+        self.assertIn('dudeism', output['stdout'].lower())
+
+    def test_checkout(self):
+        self.repo.init()
+        self.repo.commit()
+        hash_before = self.repo.head
+        self.repo.tag('tag_before_changes')
+
+        temp = tempfile.NamedTemporaryFile(
+            dir=self.repo.repo_dir, suffix='.cmtest')
+        temp.file.write("calmer than you are")
+        self.repo.commit(message="dudeism")
+        hash_after = self.repo.head
+        self.repo.tag('tag_after_changes')
+        self.repo.checkout('tag_before_changes')
+        self.assertNotEqual(hash_before, hash_after)
+        self.assertEqual(self.repo.head, hash_before)
+        self.repo.checkout('tag_after_changes')
+        self.assertEqual(self.repo.head, hash_after)
+
+    def test_fetch_checkout_remote(self):
+        cloned_tag = 'tag_from_repo_A_for_repo_B'
+        self.repo.init()
+        self.repo.commit()
+        self.repo.tag(cloned_tag)
+
+        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
+        repo_b = git.GitRepo(repo_b_tempdir.name)
+        # init, fetch, and checkout instead of cloning
+        repo_b.init()
+        repo_b.fetch(remote=self.repo.repo_dir, refspec=cloned_tag)
+        repo_b.checkout(cloned_tag)
+        tags = repo_b.list_tags()
+        self.assertIn(cloned_tag, tags)
+        self.assertEqual(self.repo.head, repo_b.head)
+
+    def test_fetch_checkout_remote_commit(self):
+        self.repo.init()
+        self.repo.commit()
+        new_commit_hash = self.repo.head
+
+        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
+        repo_b = git.GitRepo(repo_b_tempdir.name)
+        # init, fetch, and checkout instead of cloning
+        repo_b.init()
+        repo_b.fetch(remote=self.repo.repo_dir)
+        repo_b.checkout(new_commit_hash)
+        self.assertEqual(self.repo.head, repo_b.head)
+
+    def test_pull_remote(self):
+        self.repo.init()
+        self.repo.commit()
+        self.repo.tag('tag_to_pull')
+        new_commit_hash = self.repo.head
+
+        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
+        repo_b = git.GitRepo(repo_b_tempdir.name)
+        # init and pull instead of cloning
+        repo_b.init()
+        # needs a commit, o/w fails: "Cannot update the ref 'HEAD'."
+        repo_b.commit()
+        repo_b.pull(remote=self.repo.repo_dir, ref='tag_to_pull')
+        self.assertEqual(self.repo.head, repo_b.head)
 
 if __name__ == '__main__':
     from checkmate import test
