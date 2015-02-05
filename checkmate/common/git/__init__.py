@@ -74,7 +74,7 @@ def git_fetch(repo_dir, remote="origin", refspec=None, verbose=False):
     if verbose:
         command = "%s --verbose" % command
     if refspec:
-        command = "%s %s %s" % (command, remote, refspec)
+        command = "%s %s %s" % (command, remote, pipes.quote(refspec))
     else:
         command = "%s %s" % (command, remote)
     return utils.execute_shell(command, cwd=repo_dir)
@@ -84,7 +84,7 @@ def git_pull(repo_dir, remote="origin", ref=None):
     """Do a git pull of `ref' from `remote'."""
     command = 'git pull --update-head-ok %s' % remote
     if ref:
-        command = "%s %s" % (command, ref)
+        command = "%s %s" % (command, pipes.quote(ref))
     return utils.execute_shell(command, cwd=repo_dir)
 
 
@@ -98,7 +98,7 @@ def git_commit(repo_dir, message=None, amend=False, stage=True):
         if not message:
             command = "%s --no-edit" % command
     if message:
-        command = "%s --message %s" % (command, message)
+        command = "%s --message %s" % (command, pipes.quote(message))
     elif not amend:
         # if not amending and no message, allow an empty message
         command = "%s --message='' --allow-empty-message" % command
