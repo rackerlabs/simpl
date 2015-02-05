@@ -118,3 +118,74 @@ def git_head_commit(repo_dir):
     """Return the current commit hash HEAD points to."""
     return utils.execute_shell(
         'git rev-parse HEAD', cwd=repo_dir)['stdout']
+
+
+class GitRepo(object):
+
+    """Wrapper on a git repository.
+
+    Most commands return a dict with 'returncode' and 'stdout'.
+    The executor combines stderr and stdout, so any stderr will
+    return under the 'stdout' key in the dictionary.
+
+    Unless 'repo_dir' is already an initialized git repository,
+    the first method you will need to run will probably be
+    self.init() or self.clone()
+    """
+
+    def __init__(self, repo_dir):
+        if not os.path.exists(repo_dir):
+            raise OSError(errno.ENOENT, "No such file or directory")
+        self.repo_dir = repo_dir
+
+    @property
+    def head(self):
+        """Return the current commit hash."""
+        return git_head_commit(self.repo_dir)
+
+    def status(self):
+        """Get the working tree status."""
+        return git_status(self.repo_dir)['stdout']
+
+    def init(self):
+        return git_init(self.repo_dir)
+
+    def clone(self, location, branch_or_tag=None, verbose=False):
+        """Do a git checkout of 'location' @ 'branch_or_tag'."""
+        return git_clone(self.repo_dir, location,
+                         branch_or_tag=branch_or_tag,
+                         verbose=verbose)
+
+    def tag(self, tagname, message=None, force=True):
+        """Create an annotated tag."""
+        return git_tag(self.repo_dir, tagname, message=message, force=force)
+
+    def remote_tag_exists(self, tag, remote='origin'):
+        """Determine if 'tag' matches an existing remote tag name."""
+        return git_remote_tag_exists(self.repo_dir, tag, remote=remote)
+
+    def list_tags(self):
+        """Return a list of git tags for the git repo."""
+        return git_tags(self.repo_dir)
+
+    def checkout(self, ref):
+        """Do a git checkout of `ref'."""
+        return git_checkout(self.repo_dir, ref)
+
+    def fetch(self, remote="origin", refspec=None, verbose=False):
+        """Do a git fetch of `refspec'."""
+        return git_fetch(self.repo_dir, remote=remote,
+                         refspec=refspec, verbose=verbose)
+
+    def pull(self, remote="origin", ref=None):
+        """Do a git pull of `ref' from `remote'."""
+        return git_pull(self.repo_dir, remote=remote, ref=ref)
+
+    def add_all(self):
+        """Stage all changes in the working tree."""
+        return git_add_all(self.repo_dir)
+
+    def commit(self, message=None, amend=False, stage=True):
+        """Commit any changes, optionally staging all changes beforehand."""
+        return git_commit(self.repo_dir, message=message,
+                          amend=amend, stage=stage)
