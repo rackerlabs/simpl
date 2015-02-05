@@ -56,10 +56,12 @@ def git_tag(repo_dir, tagname, message=None, force=True):
     return utils.execute_shell(command, cwd=repo_dir)
 
 
-def git_tags(repo_dir):
+def git_list_tags(repo_dir, with_messages=False):
     """Return a list of git tags for the git repo in `repo_dir'."""
-    return utils.execute_shell(
-        'git tag -l', cwd=repo_dir)['stdout'].splitlines()
+    command = 'git tag -l'
+    if with_messages:
+        command = "%s -n1" % command
+    return utils.execute_shell(command, cwd=repo_dir)
 
 
 def git_checkout(repo_dir, ref):
@@ -164,9 +166,20 @@ class GitRepo(object):
         """Determine if 'tag' matches an existing remote tag name."""
         return git_remote_tag_exists(self.repo_dir, tag, remote=remote)
 
-    def list_tags(self):
-        """Return a list of git tags for the git repo."""
-        return git_tags(self.repo_dir)
+    def list_tags(self, with_messages=False):
+        """Return a list of git tags for the git repo.
+
+        If 'with_messages' is True, returns
+        a list of (tag, message) tuples
+            [(<tag1>, <message1>), (<tag2>, <message2>)]
+        """
+        output = git_list_tags(
+            self.repo_dir, with_messages=with_messages)['stdout'].splitlines()
+        output = [l for l in output if l.strip()]
+        if with_messages:
+            output = [tuple(j.strip() for j in line.split(' ', 1))
+                      for line in output]
+        return output
 
     def checkout(self, ref):
         """Do a git checkout of `ref'."""
