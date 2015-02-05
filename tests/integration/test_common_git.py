@@ -25,7 +25,7 @@ import uuid
 import mock
 import webtest
 
-from checkmate.common import git
+from checkmate.common import git as common_git
 from checkmate.common import backports
 from checkmate import exceptions as cmexc
 from checkmate.common.git import manager
@@ -113,16 +113,21 @@ class TestCloneSimple(unittest.TestCase):
         self.assertIsNone(res.body)
 
 
+
 class TestGitCommands(unittest.TestCase):
 
     init_success = "initialized empty git repository"
 
     def setUp(self):
-        self.tempdir = backports.TemporaryDirectory(prefix=__name__)
-        self.repo = git.GitRepo(self.tempdir.name)
+        prefix = "%s-" % __name__
+        self.tempdir = backports.TemporaryDirectory(prefix=prefix)
+        self.repo = common_git.GitRepo(self.tempdir.name)
+        self.tempdir_b = backports.TemporaryDirectory(prefix=prefix)
+        self.repo_b = common_git.GitRepo(self.tempdir_b.name)
 
     def tearDown(self):
         self.tempdir.cleanup()
+        self.tempdir_b.cleanup()
 
     def test_initialize_repository(self):
         output = self.repo.init()
@@ -132,10 +137,8 @@ class TestGitCommands(unittest.TestCase):
     def test_init_and_clone_from(self):
         output = self.repo.init()
         self.assertIn(self.init_success, output['stdout'].lower())
-        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
-        repo_b = git.GitRepo(repo_b_tempdir.name)
-        output = repo_b.clone(self.repo.repo_dir)
-        msg = "cloning into '%s'" % repo_b.repo_dir.lower()
+        output = self.repo_b.clone(self.repo.repo_dir)
+        msg = "cloning into '%s'" % self.repo_b.repo_dir.lower()
         self.assertIn(msg, output['stdout'].lower())
 
     def test_tag(self):
@@ -153,10 +156,8 @@ class TestGitCommands(unittest.TestCase):
         self.repo.commit()
         self.repo.tag(cloned_tag)
 
-        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
-        repo_b = git.GitRepo(repo_b_tempdir.name)
-        repo_b.clone(self.repo.repo_dir)
-        tag_list = repo_b.list_tags()
+        self.repo_b.clone(self.repo.repo_dir)
+        tag_list = self.repo_b.list_tags()
         self.assertIn(cloned_tag, tag_list)
 
     def test_duplicate_tag_updates(self):
@@ -180,7 +181,27 @@ class TestGitCommands(unittest.TestCase):
             cmexc.CheckmateCalledProcessError, self.repo.tag,
             test_tag, force=False)
 
-    def test_add_and_commit_change(self):
+    def test_tag_with_spaces_fails(self):
+        test_tag = 'x k c d'
+        self.repo.init()
+        # needs a commit, o/w fails: "No such ref: HEAD"
+        self.repo.commit()
+        self.assertRaises(
+            cmexc.CheckmateCalledProcessError, self.repo.tag,
+            test_tag)
+
+    def test_annotated_tag(self):
+        test_tag = 'v2.0.0'
+        test_message = "2 is better than 1"
+        self.repo.init()
+        self.repo.commit()
+        self.repo.tag(test_tag, message=test_message)
+        tags = self.repo.list_tags(with_messages=False)
+        self.assertIn('v2.0.0', tags)
+        tags = self.repo.list_tags(with_messages=True)
+        self.assertIn((test_tag, test_message), tags)
+
+    def test_commit_automatically_stages(self):
         self.repo.init()
         temp = tempfile.NamedTemporaryFile(
             dir=self.repo.repo_dir, suffix='.cmtest')
@@ -189,6 +210,14 @@ class TestGitCommands(unittest.TestCase):
         output = self.repo.commit(message="dudeism")
         self.assertIn(msg.lower(), output['stdout'].lower())
         self.assertIn('dudeism', output['stdout'].lower())
+
+    def test_commit_with_long_message(self):
+        self.repo.init()
+        self.repo.commit()
+        hash_before = self.repo.head
+        print self.repo.commit(message='fix(api): dont implode')
+        hash_after = self.repo.head
+        self.assertNotEqual(hash_before, hash_after)
 
     def test_checkout(self):
         self.repo.init()
@@ -214,28 +243,24 @@ class TestGitCommands(unittest.TestCase):
         self.repo.commit()
         self.repo.tag(cloned_tag)
 
-        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
-        repo_b = git.GitRepo(repo_b_tempdir.name)
         # init, fetch, and checkout instead of cloning
-        repo_b.init()
-        repo_b.fetch(remote=self.repo.repo_dir, refspec=cloned_tag)
-        repo_b.checkout(cloned_tag)
-        tags = repo_b.list_tags()
+        self.repo_b.init()
+        self.repo_b.fetch(remote=self.repo.repo_dir, refspec=cloned_tag)
+        self.repo_b.checkout(cloned_tag)
+        tags = self.repo_b.list_tags()
         self.assertIn(cloned_tag, tags)
-        self.assertEqual(self.repo.head, repo_b.head)
+        self.assertEqual(self.repo.head, self.repo_b.head)
 
     def test_fetch_checkout_remote_commit(self):
         self.repo.init()
         self.repo.commit()
         new_commit_hash = self.repo.head
 
-        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
-        repo_b = git.GitRepo(repo_b_tempdir.name)
         # init, fetch, and checkout instead of cloning
-        repo_b.init()
-        repo_b.fetch(remote=self.repo.repo_dir)
-        repo_b.checkout(new_commit_hash)
-        self.assertEqual(self.repo.head, repo_b.head)
+        self.repo_b.init()
+        self.repo_b.fetch(remote=self.repo.repo_dir)
+        self.repo_b.checkout(new_commit_hash)
+        self.assertEqual(self.repo.head, self.repo_b.head)
 
     def test_pull_remote(self):
         self.repo.init()
@@ -243,14 +268,12 @@ class TestGitCommands(unittest.TestCase):
         self.repo.tag('tag_to_pull')
         new_commit_hash = self.repo.head
 
-        repo_b_tempdir = backports.TemporaryDirectory(prefix=__name__)
-        repo_b = git.GitRepo(repo_b_tempdir.name)
         # init and pull instead of cloning
-        repo_b.init()
+        self.repo_b.init()
         # needs a commit, o/w fails: "Cannot update the ref 'HEAD'."
-        repo_b.commit()
-        repo_b.pull(remote=self.repo.repo_dir, ref='tag_to_pull')
-        self.assertEqual(self.repo.head, repo_b.head)
+        self.repo_b.commit()
+        self.repo_b.pull(remote=self.repo.repo_dir, ref='tag_to_pull')
+        self.assertEqual(self.repo.head, self.repo_b.head)
 
 if __name__ == '__main__':
     from checkmate import test
