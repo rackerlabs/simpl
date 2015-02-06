@@ -273,6 +273,7 @@ class TestGitCommands(unittest.TestCase):
         # needs a commit, o/w fails: "Cannot update the ref 'HEAD'."
         self.repo_b.commit()
         self.repo_b.pull(remote=self.repo.repo_dir, ref='tag_to_pull')
+        self.repo_b.checkout('FETCH_HEAD')
         self.assertEqual(self.repo.head, self.repo_b.head)
 
 if __name__ == '__main__':
