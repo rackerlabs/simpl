@@ -11,7 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+"""Common git commands and local repository wrapper class."""
 import errno
 import os
 import pipes
@@ -116,6 +116,7 @@ def git_status(repo_dir):
     """Get the working tree status."""
     return utils.execute_shell('git status', cwd=repo_dir)
 
+
 def git_head_commit(repo_dir):
     """Return the current commit hash HEAD points to."""
     return utils.execute_shell(
@@ -136,6 +137,7 @@ class GitRepo(object):
     """
 
     def __init__(self, repo_dir):
+        """Initialize wrapper and check for existence of dir."""
         if not os.path.exists(repo_dir):
             raise OSError(errno.ENOENT, "No such file or directory")
         self.repo_dir = repo_dir
@@ -150,6 +152,7 @@ class GitRepo(object):
         return git_status(self.repo_dir)['stdout']
 
     def init(self):
+        """Run `git init` in the repo_dir."""
         return git_init(self.repo_dir)
 
     def clone(self, location, branch_or_tag=None, verbose=False):
