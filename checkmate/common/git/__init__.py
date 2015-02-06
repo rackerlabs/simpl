@@ -61,7 +61,7 @@ def git_list_tags(repo_dir, with_messages=False):
     command = 'git tag -l'
     if with_messages:
         command = "%s -n1" % command
-    return utils.execute_shell(command, cwd=repo_dir)
+    return utils.execute_shell(command, cwd=repo_dir)['stdout'].splitlines()
 
 
 def git_checkout(repo_dir, ref):
@@ -174,7 +174,7 @@ class GitRepo(object):
             [(<tag1>, <message1>), (<tag2>, <message2>)]
         """
         output = git_list_tags(
-            self.repo_dir, with_messages=with_messages)['stdout'].splitlines()
+            self.repo_dir, with_messages=with_messages)
         output = [l for l in output if l.strip()]
         if with_messages:
             output = [tuple(j.strip() for j in line.split(' ', 1))
