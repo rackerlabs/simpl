@@ -215,7 +215,7 @@ class TestGitCommands(unittest.TestCase):
         self.repo.init()
         self.repo.commit()
         hash_before = self.repo.head
-        print self.repo.commit(message='fix(api): dont implode')
+        self.repo.commit(message='fix(api): dont implode')
         hash_after = self.repo.head
         self.assertNotEqual(hash_before, hash_after)
 
