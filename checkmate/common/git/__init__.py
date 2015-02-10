@@ -36,15 +36,6 @@ def git_clone(target_dir, location, branch_or_tag=None, verbose=False):
     return utils.execute_shell(command)
 
 
-def git_remote_tag_exists(repo_dir, tag, remote='origin'):
-    """Return True if 'tag' matches an existing remote tag name."""
-    output = utils.execute_shell('git ls-remote %s %s' % (remote, tag),
-                                 cwd=repo_dir)
-    if output['stdout']:
-        return True
-    return False
-
-
 def git_tag(repo_dir, tagname, message=None, force=True):
     """Create an annotated tag at the current HEAD."""
     message = pipes.quote(message or "%s" % tagname)
@@ -165,9 +156,6 @@ class GitRepo(object):
         """Create an annotated tag."""
         return git_tag(self.repo_dir, tagname, message=message, force=force)
 
-    def remote_tag_exists(self, tag, remote='origin'):
-        """Determine if 'tag' matches an existing remote tag name."""
-        return git_remote_tag_exists(self.repo_dir, tag, remote=remote)
 
     def list_tags(self, with_messages=False):
         """Return a list of git tags for the git repo.
