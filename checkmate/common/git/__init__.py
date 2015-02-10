@@ -55,6 +55,20 @@ def git_list_tags(repo_dir, with_messages=False):
     return utils.execute_shell(command, cwd=repo_dir)['stdout'].splitlines()
 
 
+def git_ls_remote(repo_dir, remote='origin', refs=None):
+    """Run git ls-remote.
+
+    'remote' can be a remote ref in a local repo, e.g. origin,
+    or url of a remote repository.
+    """
+    command = 'git ls-remote %s' % remote
+    if refs:
+        if isinstance(refs, list):
+            refs = " ".join(refs)
+        command = "%s %s" % (command, refs)
+    return utils.execute_shell(command, cwd=repo_dir)['stdout'].splitlines()
+
+
 def git_checkout(repo_dir, ref):
     """Do a git checkout of `ref' in `repo_dir'."""
     return utils.execute_shell('git checkout --force %s'
@@ -156,6 +170,19 @@ class GitRepo(object):
         """Create an annotated tag."""
         return git_tag(self.repo_dir, tagname, message=message, force=force)
 
+    def ls_remote(self, remote='origin', refs=None):
+        """Return a list of refs for the given remote.
+
+        Returns a list of (hash, ref) tuples
+            [(<hash1>, <ref1>), (<hash2>, <ref2>)]
+        """
+        output = git_ls_remote(
+            self.repo_dir, remote='origin', refs=refs)
+        output = [l.replace('\t', ' ') for l in output if l.strip()
+                  and not l.strip().lower().startswith('from ')]
+        output = [tuple(j.strip() for j in line.split(' ', 1))
+                  for line in output]
+        return output
 
     def list_tags(self, with_messages=False):
         """Return a list of git tags for the git repo.
