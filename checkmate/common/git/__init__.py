@@ -143,6 +143,8 @@ class GitRepo(object):
 
     def __init__(self, repo_dir):
         """Initialize wrapper and check for existence of dir."""
+        repo_dir = os.path.abspath(
+            os.path.expanduser(os.path.normpath(repo_dir)))
         if not os.path.exists(repo_dir):
             raise OSError(errno.ENOENT, "No such file or directory")
         self.repo_dir = repo_dir
@@ -193,7 +195,7 @@ class GitRepo(object):
         """
         output = git_list_tags(
             self.repo_dir, with_messages=with_messages)
-        output = [l for l in output if l.strip()]
+        output = [l.replace('\t', ' ') for l in output if l.strip()]
         if with_messages:
             output = [tuple(j.strip() for j in line.split(' ', 1))
                       for line in output]
