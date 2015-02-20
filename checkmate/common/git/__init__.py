@@ -18,6 +18,10 @@ import pipes
 
 from checkmate import utils
 
+def git_version():
+    """Get the `git version`."""
+    return utils.execute_shell('git version')
+
 
 def git_init(repo_dir):
     """Do a git init in `repo_dir'."""
