@@ -260,6 +260,10 @@ class TestGitCommands(unittest.TestCase):
 
         # init, fetch, and checkout instead of cloning
         self.repo_b.init()
+        # NOTE(larsbutler): For a full explanation of why we need to add a
+        # `commit` here before fetching and checking out, see
+        # `checkmate.common.git.check_git_version`.
+        self.repo_b.commit()
         self.repo_b.fetch(remote=self.repo.repo_dir)
         self.repo_b.checkout(new_commit_hash)
         self.assertEqual(self.repo.head, self.repo_b.head)
