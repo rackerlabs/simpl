@@ -206,6 +206,7 @@ class TestGitCommands(unittest.TestCase):
         temp = tempfile.NamedTemporaryFile(
             dir=self.repo.repo_dir, suffix='.cmtest')
         temp.write("calmer than you are")
+        temp.flush()
         msg = "1 file changed"
         output = self.repo.commit(message="dudeism")
         self.assertIn(msg.lower(), output['stdout'].lower())
