@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import unittest
 import uuid
+import warnings
 
 import mock
 import webtest
@@ -276,6 +277,32 @@ class TestGitCommands(unittest.TestCase):
         self.repo_b.pull(remote=self.repo.repo_dir, ref='tag_to_pull')
         self.repo_b.checkout('FETCH_HEAD')
         self.assertEqual(self.repo.head, self.repo_b.head)
+
+
+class TestGitVersion(unittest.TestCase):
+
+    def test_check_git_version_no_git(self):
+        # Check that a warning is raised if git isn't installed.
+        with mock.patch('checkmate.common.git.git_version') as gv:
+            gv.return_value = dict(returncode=127, stdout='git: command not found')
+            with warnings.catch_warnings(record=True) as w:
+                common_git.check_git_version()
+                [warning] = w
+                self.assertEqual("Git does not appear to be installed!",
+                                 warning.message.message)
+
+    def test_check_git_version_old(self):
+        # Check that a warning is raised if the installed git version is older
+        # than recommended.
+        with mock.patch('checkmate.common.git.git_version') as gv:
+            gv.return_value = dict(returncode=0, stdout='git version 1.8.5.6')
+            with warnings.catch_warnings(record=True) as w:
+                common_git.check_git_version()
+                [warning] = w
+                self.assertEqual(
+                    "Git version 1.8.5.6 found. 1.9 or greater is recommended",
+                    warning.message.message)
+
 
 if __name__ == '__main__':
     from checkmate import test
