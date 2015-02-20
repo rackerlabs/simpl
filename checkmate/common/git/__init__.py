@@ -15,12 +15,56 @@
 import errno
 import os
 import pipes
+import warnings
 
 from checkmate import utils
+
+#: Minimum recommended git version
+MIN_GIT_VERSION = (1, 9)
+
 
 def git_version():
     """Get the `git version`."""
     return utils.execute_shell('git version')
+
+
+def check_git_version():
+    """Check the installed git version against a known-stable version.
+
+    If the git version is less then ``MIN_GIT_VERSION``, a warning is raised.
+
+    If git is not installed at all on this system, we also raise a warning for
+    that.
+
+    The original reason why this check was introduced is because with older
+    versions git (< 1.9), newly init-ed git repos cannot checkout from a
+    fetched remote unless the repo has at least one commit in it. The reason
+    for this is that before creating a commit, the HEAD refers to a
+    refs/heads/master file which doesn't exist yet.
+
+    TODO(larsbutler): If we wanted to be defensive about this and favor
+    compatibility over elegance, we could just automatically add a `git commit`
+    (empty, no message) after every `git init`. I would recommend doing this in
+    the :class:`GitRepo` class, not in the module-level util functions. Adding
+    an extra commit shouldn't cause any problems.
+    """
+    version = git_version()
+    if not version['returncode'] == 0:
+        warnings.warn("Git does not appear to be installed!", RuntimeWarning)
+        return
+
+    ver_num = version['stdout'].split()[2]
+    major, minor, _ = ver_num.split('.', 2)
+    major = int(major)
+    minor = int(minor)
+    if (major, minor) < MIN_GIT_VERSION:
+        warnings.warn(
+            "Git version %(ver)s found. %(rec)s or greater is recommended"
+            % dict(ver=ver_num,
+                   rec='.'.join((str(x) for x in MIN_GIT_VERSION))),
+            RuntimeWarning)
+# Check the git version whenever this module is used:
+check_git_version()
 
 
 def git_init(repo_dir):
