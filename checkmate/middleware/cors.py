@@ -16,8 +16,9 @@
 
 import logging
 
-import urlparse
 import webob
+
+from checkmate.contrib import urlparse
 
 LOG = logging.getLogger(__name__)
 
