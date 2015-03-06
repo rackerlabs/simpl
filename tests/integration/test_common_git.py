@@ -146,7 +146,7 @@ class TestGitCommands(unittest.TestCase):
         test_tag = 'thanks_for_the_tag'
         self.repo.init()
         # needs a commit, o/w fails: "No such ref: HEAD"
-        self.repo.commit()
+        self.repo.commit(stage=False)
         self.repo.tag(test_tag)
         tag_list = self.repo.list_tags()
         self.assertIn(test_tag, tag_list)
@@ -154,7 +154,7 @@ class TestGitCommands(unittest.TestCase):
     def test_clone_brings_tags(self):
         cloned_tag = 'tag_from_repo_A_for_repo_B'
         self.repo.init()
-        self.repo.commit()
+        self.repo.commit(stage=False)
         self.repo.tag(cloned_tag)
 
         self.repo_b.clone(self.repo.repo_dir)
@@ -165,9 +165,9 @@ class TestGitCommands(unittest.TestCase):
         test_tag = 'duplicate_me'
         self.repo.init()
         # needs a commit, otherwise fails w/ "No such ref: HEAD"
-        self.repo.commit()
+        self.repo.commit(stage=False)
         self.repo.tag(test_tag)
-        self.repo.commit()
+        self.repo.commit(stage=False)
         output = self.repo.tag(test_tag)
         msg = "updated tag '%s'" % test_tag
         self.assertIn(msg.lower(), output['stdout'].lower())
@@ -176,7 +176,7 @@ class TestGitCommands(unittest.TestCase):
         test_tag = 'duplicate_me'
         self.repo.init()
         # needs a commit, o/w fails: "No such ref: HEAD"
-        self.repo.commit()
+        self.repo.commit(stage=False)
         self.repo.tag(test_tag)
         self.assertRaises(
             cmexc.CheckmateCalledProcessError, self.repo.tag,
@@ -186,7 +186,7 @@ class TestGitCommands(unittest.TestCase):
         test_tag = 'x k c d'
         self.repo.init()
         # needs a commit, o/w fails: "No such ref: HEAD"
-        self.repo.commit()
+        self.repo.commit(stage=False)
         self.assertRaises(
             cmexc.CheckmateCalledProcessError, self.repo.tag,
             test_tag)
@@ -195,7 +195,7 @@ class TestGitCommands(unittest.TestCase):
         test_tag = 'v2.0.0'
         test_message = "2 is better than 1"
         self.repo.init()
-        self.repo.commit()
+        self.repo.commit(stage=False)
         self.repo.tag(test_tag, message=test_message)
         tags = self.repo.list_tags(with_messages=False)
         self.assertIn('v2.0.0', tags)
@@ -215,15 +215,15 @@ class TestGitCommands(unittest.TestCase):
 
     def test_commit_with_long_message(self):
         self.repo.init()
-        self.repo.commit()
+        self.repo.commit(stage=False)
         hash_before = self.repo.head
-        self.repo.commit(message='fix(api): dont implode')
+        self.repo.commit(message='fix(api): dont implode', stage=False)
         hash_after = self.repo.head
         self.assertNotEqual(hash_before, hash_after)
 
     def test_checkout(self):
         self.repo.init()
-        self.repo.commit()
+        self.repo.commit(stage=False)
         hash_before = self.repo.head
         self.repo.tag('tag_before_changes')
 
@@ -242,7 +242,7 @@ class TestGitCommands(unittest.TestCase):
     def test_fetch_checkout_remote(self):
         cloned_tag = 'tag_from_repo_A_for_repo_B'
         self.repo.init()
-        self.repo.commit()
+        self.repo.commit(stage=False)
         self.repo.tag(cloned_tag)
 
         # init, fetch, and checkout instead of cloning
@@ -255,7 +255,7 @@ class TestGitCommands(unittest.TestCase):
 
     def test_fetch_checkout_remote_commit(self):
         self.repo.init()
-        self.repo.commit()
+        self.repo.commit(stage=False)
         new_commit_hash = self.repo.head
 
         # init, fetch, and checkout instead of cloning
@@ -263,21 +263,21 @@ class TestGitCommands(unittest.TestCase):
         # NOTE(larsbutler): For a full explanation of why we need to add a
         # `commit` here before fetching and checking out, see
         # `checkmate.common.git.check_git_version`.
-        self.repo_b.commit()
+        self.repo_b.commit(stage=False)
         self.repo_b.fetch(remote=self.repo.repo_dir)
         self.repo_b.checkout(new_commit_hash)
         self.assertEqual(self.repo.head, self.repo_b.head)
 
     def test_pull_remote(self):
         self.repo.init()
-        self.repo.commit()
+        self.repo.commit(stage=False)
         self.repo.tag('tag_to_pull')
         new_commit_hash = self.repo.head
 
         # init and pull instead of cloning
         self.repo_b.init()
         # needs a commit, o/w fails: "Cannot update the ref 'HEAD'."
-        self.repo_b.commit()
+        self.repo_b.commit(stage=False)
         self.repo_b.pull(remote=self.repo.repo_dir, ref='tag_to_pull')
         self.repo_b.checkout('FETCH_HEAD')
         self.assertEqual(self.repo.head, self.repo_b.head)
