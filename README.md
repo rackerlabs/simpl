@@ -1,6 +1,8 @@
 # simpl
 common libraries
 
+## release
+[![latest](https://img.shields.io/pypi/v/simpl.svg)](https://pypi.python.org/pypi/simpl)
 
 ## builds
 
