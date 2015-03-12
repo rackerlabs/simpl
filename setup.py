@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Rackspace US, Inc.
+# Copyright 2013-2015 Rackspace US, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,6 +63,8 @@ setup(
     test_suite='tests',
     install_requires=DEPENDENCIES,
     packages=find_packages(exclude=['tests']),
+    maintainer='Sam Stavinoha',
+    maintainer_email='samuel.stavinoha@rackspace.com',
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
