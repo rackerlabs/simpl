@@ -149,6 +149,7 @@ argparser), the `dest` parameter (also a standard argparse feature), and the
         mutually_exclusive_group='my_key',  # only one options should be set
         env='MY_PKEY_FILE')
 """
+from __future__ import print_function
 
 import argparse
 import collections
@@ -283,6 +284,7 @@ class Config(collections.MutableMapping):
         self._options = copy.copy(options) or []
         self._values = {option.name: option.default
                         for option in self._options}
+        self._metaconfigure()
         self._parser = argparse.ArgumentParser(**parser_kwargs)
         self.pass_thru_args = []
 
@@ -297,6 +299,40 @@ class Config(collections.MutableMapping):
     def prog(self):
         """Program name."""
         return self._parser.prog
+
+    @property
+    def default_ini(self):
+        """Default ini file name."""
+        return '%s.ini' % self.prog
+
+    def _metaconfigure(self):
+        """Initialize metaconfig for provisioning self."""
+        metaconfig = self._get_metaconfig_class()
+        if not metaconfig:
+            return
+        if self.__class__ is metaconfig:
+            # don't get too meta
+            return
+        override = {
+            'conflict_handler': 'resolve',
+            'add_help': False,
+            'prog': self._parser_kwargs.get('prog'),
+        }
+        self._metaconf = metaconfig(**override)
+        metaparser = self._metaconf.build_parser(
+            options=self._metaconf._options, permissive=False, **override)
+        for grp in metaparser._action_groups:
+            grp.title = 'initialization (metaconfig) arguments'
+        self._parser_kwargs.setdefault('parents', [])
+        self._parser_kwargs['parents'].append(metaparser)
+        self._metaconf.parse()
+        self._metaconf.provision(self)
+
+    @classmethod
+    def _get_metaconfig_class(self):
+        """Return the metaconfig class to be used."""
+        # override this to disable/modify metaconfig behavior
+        return MetaConfig
 
     def __getitem__(self, key):
         """Get item from config."""
@@ -400,7 +436,7 @@ class Config(collections.MutableMapping):
         parsed, _ = parser.parse_known_args([])
         return vars(parsed)
 
-    def parse_ini(self, paths=None):
+    def parse_ini(self, paths=None, namespace=None):
         """Parse config files and return configuration options.
 
         Expects array of files that are in ini format.
@@ -408,16 +444,37 @@ class Config(collections.MutableMapping):
                       If not supplied, uses the ini_paths value supplied on
                       initialization.
         """
+        namespace = namespace or self.prog
         results = {}
         config = ConfigParser.SafeConfigParser()
-        config.read(paths or self._ini_paths)
+
+        if os.path.isfile(self.default_ini) and (
+                self.default_ini not in self._ini_paths):
+            self._ini_paths.append(self.default_ini)
+
+        parser_errors = (ConfigParser.NoOptionError,
+                         ConfigParser.NoSectionError)
+        config.read(paths or reversed(self._ini_paths))
         for option in self._options:
             ini_section = option.kwargs.get('ini_section')
+            value = None
             if ini_section:
                 try:
                     value = config.get(ini_section, option.name)
                     results[option.dest] = option.type(value)
-                except ConfigParser.NoSectionError:
+                except parser_errors as err:
+                    # this is an error and the next one is a DEBUG b/c
+                    # this code is executed only if the Option is defined
+                    # with the ini_section keyword argument
+                    LOG.error('Error parsing ini file: %r -- Continuing.',
+                              err)
+            if not value:
+                try:
+                    value = config.get(namespace, option.name)
+                    results[option.dest] = option.type(value)
+                except parser_errors:
+                    LOG.debug('Error parsing ini file: %r -- Continuing.',
+                              err)
                     pass
         return results
 
@@ -490,6 +547,98 @@ class Config(collections.MutableMapping):
         """Display configured values when representing instance."""
         return "<Config %s>" % ', '.join([
             '%s=%s' % (k, v) for k, v in self.items()])
+
+
+class MetaConfig(Config):
+
+    """A config class used by Config to find and evaluate config sources.
+
+    This class provides a workaround for a catch 22 where an application
+    may want to specify a different source for config values (other than
+    command line, environment variables, keyring, etc.) but should be able
+    to specify that source in the same way any other option is specified.
+    If you wanted to add --config-file to your basic list of Options in order
+    to populate your entire config with values found in the config file, you
+    would need to write special logic for handling that particular option.
+    Instead, --config-file can be added to your MetaConfig's options, and
+    any options gathered from the config file will be passed directly to
+    your primary Config and from there the logic flows as usual.
+
+    Out of the box, this class supports --ini, and this class will be
+    defined as the default MetaConfig class for Config.
+
+    Example using --ini
+
+        # myapp-dev.ini
+        [myapp]
+        capacity = large
+        duration = 60
+
+        # myapp.py
+        from config import Config
+        options = [
+            Option('--capacity'),
+            Option('--duration'),
+            Option('--year'),
+        ]
+        c = Config(prog='myapp', options=options)
+        c.parse()
+        print 'config:'
+        print c
+
+        # run
+        $ myapp.py --ini myapp-dev.ini --year 1995
+            config:
+            {
+                'capacity': 'large',
+                'duration': 60,
+                'year': 1995,
+            }
+
+    This class could be extended to support a network-based
+    meta option such as --json-url. The value could point to a url
+    which downloads a json file full of values for your Options. Then,
+    when running your app which leverages simpl/config, you would run:
+
+        (1)
+        $ ./myapp.py --json-url https://gist.com/usr/sha1/raw/myconf.json
+
+        OR
+
+        (2)
+        $ export MYAPP_JSON_URL=https://gist.com/usr/sha1/raw/myconf.json
+        $ ./myapp.py
+
+    which would then parse your environment using Config, where (1) would
+    find the command line argument's value for your initialization option
+    (aka meta options) and (2) would find the environment variable. Your
+    resulting Config instance would be populated by values found in the json
+    file downloaded from the url.
+    """
+
+    options = [
+        Option('--ini', metavar='PATH',
+               help=('Source some or all of the options from this ini file. '
+                     'Defaults to {}.ini or <program_name>.ini in your '
+                     'current working directory.').format(sys.argv[0])),
+    ]
+
+    def __init__(self, options=None, **kwargs):
+        options = options or self.options
+        super(MetaConfig, self).__init__(options=options, **kwargs)
+
+    def provision(self, conf):
+        """Provision this metaconfig's config with what we gathered.
+
+        Since Config has native support for ini files, we just need to
+        let this metaconfig's config know about the ini file we found.
+
+        In future scenarios, this is where we would implement logic
+        specific to a metaconfig source if that source is not natively
+        supported by Config.
+        """
+        if self.ini and self.ini not in conf._ini_paths:
+            conf._ini_paths.insert(0, self.ini)
 
 
 def read_from(value):
