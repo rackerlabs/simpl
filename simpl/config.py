@@ -323,6 +323,7 @@ class Config(collections.MutableMapping):
                         for option in self._options}
         self._metaconfigure()
         self._parser = argparse.ArgumentParser(**parser_kwargs)
+        self.ini_config = None
         self.pass_thru_args = []
 
     @classmethod
@@ -481,7 +482,7 @@ class Config(collections.MutableMapping):
         """
         namespace = namespace or self.prog
         results = {}
-        config = ConfigParser.SafeConfigParser()
+        self.ini_config = ConfigParser.SafeConfigParser()
 
         if os.path.isfile(self.default_ini) and (
                 self.default_ini not in self._ini_paths):
@@ -489,13 +490,13 @@ class Config(collections.MutableMapping):
 
         parser_errors = (ConfigParser.NoOptionError,
                          ConfigParser.NoSectionError)
-        config.read(paths or reversed(self._ini_paths))
+        self.ini_config.read(paths or reversed(self._ini_paths))
         for option in self._options:
             ini_section = option.kwargs.get('ini_section')
             value = None
             if ini_section:
                 try:
-                    value = config.get(ini_section, option.name)
+                    value = self.ini_config.get(ini_section, option.name)
                     results[option.dest] = option.type(value)
                 except parser_errors as err:
                     # this is an ERROR and the next one is a DEBUG b/c
@@ -505,7 +506,7 @@ class Config(collections.MutableMapping):
                               err)
             if not value:
                 try:
-                    value = config.get(namespace, option.name)
+                    value = self.ini_config.get(namespace, option.name)
                     results[option.dest] = option.type(value)
                 except parser_errors as err:
                     LOG.debug('Error parsing ini file: %r -- Continuing.',
