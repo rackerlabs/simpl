@@ -718,3 +718,25 @@ def comma_separated_pairs(value):
 def parse_key_format(value):
     """Handle string formats of key files."""
     return value.strip("'").replace('\\n', '\n')
+
+
+if __name__ == '__main__':
+
+    opts = [
+        Option('--foo'),
+        Option('--bar'),
+        Option('--baz'),
+        Option('--key', group='secret', mutually_exclusive=True),
+        Option('--key-file', group='secret', mutually_exclusive=True),
+        Option('--key-thing', group='secret'),
+        Option('--this', group='things'),
+        Option('--who', group='group of its own'),
+        #Option('--more', mutually_exclusive=True),  # should fail
+        Option('--more', mutually_exclusive=True, dest='more'),  # should be ok
+        Option('--less', mutually_exclusive=True, dest='more'),  # should be ok
+    ]
+    myconf = Config(options=opts)
+    if len(sys.argv) == 1:
+        sys.argv.append('--help')
+    myconf.parse()
+    print(myconf)
