@@ -212,6 +212,25 @@ class Option(object):
         self._action = None
         self._mutexgroup = None
 
+    def __copy__(self):
+        cpargs = copy.copy(self.args)
+        cpkwargs = copy.copy(self.kwargs)
+        newone = type(self)(*cpargs, **cpkwargs)
+        updater = {k: v for k, v in copy.copy(self.__dict__).items()
+                   if k not in ('args', 'kwargs')}
+        newone.__dict__.update(updater)
+        assert not newone.kwargs is self.kwargs
+        return newone
+
+    def __repr__(self):
+        args = ', '.join(self.args)
+        kwrgs = ', '.join(['%s=%s' % (k, v) for k, v in self.kwargs.items()])
+        rpr = 'Option(%s' % args
+        if kwrgs:
+            rpr = '%s, %s' % (rpr, kwrgs)
+        rpr = '%s)' % rpr
+        return rpr
+
     def add_argument(self, parser, permissive=False, **override_kwargs):
         """Add an option to a an argparse parser.
 
