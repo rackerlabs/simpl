@@ -335,18 +335,20 @@ class Config(collections.MutableMapping):
 
     """Parses configuration sources."""
 
-    def __init__(self, options=None, ini_paths=None, **parser_kwargs):
+    def __init__(self, options=None, ini_paths=None, argv=None, **parser_kwargs):
         """Initialize with list of options.
 
         :param ini_paths: optional paths to ini files to look up values from
         :param parser_kwargs: kwargs used to init argparse parsers.
+        :param argv: argument strings (defaults to sys.argv)
         """
         self._parser_kwargs = parser_kwargs or {}
         self._ini_paths = ini_paths or []
         self._options = copy.copy(options) or []
         self._values = {option.name: option.default
                         for option in self._options}
-        self._metaconfigure()
+        self._argv = argv
+        self._metaconfigure(argv=self._argv)
         self._parser = argparse.ArgumentParser(**parser_kwargs)
         self.ini_config = None
         self.pass_thru_args = []
@@ -368,7 +370,7 @@ class Config(collections.MutableMapping):
         """Default ini file name."""
         return '%s.ini' % self.prog
 
-    def _metaconfigure(self):
+    def _metaconfigure(self, argv=None):
         """Initialize metaconfig for provisioning self."""
         metaconfig = self._get_metaconfig_class()
         if not metaconfig:
@@ -386,7 +388,7 @@ class Config(collections.MutableMapping):
             options=self._metaconf._options, permissive=False, **override)
         self._parser_kwargs.setdefault('parents', [])
         self._parser_kwargs['parents'].append(metaparser)
-        self._metaconf.parse()
+        self._metaconf.parse(argv=argv)
         self._metaconf.provision(self)
 
     @staticmethod
@@ -450,7 +452,7 @@ class Config(collections.MutableMapping):
             arguments.
         """
         if argv is None:
-            argv = sys.argv
+            argv = self._argv or sys.argv
         options = []
         for option in self._options:
             kwargs = option.kwargs.copy()
