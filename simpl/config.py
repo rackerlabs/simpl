@@ -238,6 +238,7 @@ class Option(object):
             required arguments.
         """
         kwargs = {}
+        required = None
         if self.kwargs:
             kwargs = copy.copy(self.kwargs)
             if 'env' in kwargs and 'help' in kwargs:
@@ -245,7 +246,7 @@ class Option(object):
                                                      kwargs['env'])
             if permissive:
                 try:
-                    del kwargs['required']
+                    required = kwargs.pop('required', None)
                 except KeyError:
                     pass
             try:
@@ -275,7 +276,8 @@ class Option(object):
                     group = parser.add_argument_group(
                         title=groupname, description=description)
                 if mutually_exclusive:
-                    required = kwargs.pop('required', None)
+                    if not required:
+                        required = kwargs.pop('required', None)
                     mutexg_title = ('%s mutually-exclusive-group' % groupname)
                     exists = [grp for grp in group._mutually_exclusive_groups
                               if grp.title == mutexg_title]
@@ -286,6 +288,10 @@ class Option(object):
                         group = group.add_mutually_exclusive_group(
                             required=required)
                         group.title = mutexg_title
+                    # if any in the same group are required, then the
+                    # mutually exclusive group should be set to required
+                    if required and not group.required:
+                        group.required = required
                     self._mutexgroup = group
                 self._action = group.add_argument(*self.args, **kwargs)
                 return
