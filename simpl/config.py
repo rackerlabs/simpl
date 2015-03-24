@@ -502,7 +502,14 @@ class Config(collections.MutableMapping):
 
     def get_defaults(self):
         """Use argparse to determine and return dict of defaults."""
-        parser = self.build_parser(self._options, permissive=True)
+        # dont need 'required' to determine the default
+        options = [copy.copy(opt) for opt in self._options]
+        for opt in options:
+            try:
+                del opt.kwargs['required']
+            except KeyError:
+                pass
+        parser = self.build_parser(options, permissive=True)
         parsed, _ = parser.parse_known_args([])
         return vars(parsed)
 
