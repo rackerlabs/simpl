@@ -350,6 +350,7 @@ class Config(collections.MutableMapping):
         self._argv = argv
         self._metaconfigure(argv=self._argv)
         self._parser = argparse.ArgumentParser(**parser_kwargs)
+        self._prog = None
         self.ini_config = None
         self.pass_thru_args = []
 
@@ -363,7 +364,13 @@ class Config(collections.MutableMapping):
     @property
     def prog(self):
         """Program name."""
-        return self._parser.prog
+        if not self._prog:
+            self._prog = self._parser.prog
+        return self._prog
+
+    @prog.setter
+    def prog(self, value):
+        self._prog = value
 
     @property
     def default_ini(self):
