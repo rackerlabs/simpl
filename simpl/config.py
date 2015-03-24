@@ -174,7 +174,7 @@ class SimplConfigError(Exception):
     """Base class for exceptions."""
 
 
-class NoGroupforOption(SimplConfigError):
+class NoGroupForOption(SimplConfigError):
 
     """Mutually exclusive option requires a group name."""
 
@@ -263,8 +263,8 @@ class Option(object):
                 groupname = kwargs.pop('group', None) or kwargs.get('dest')
                 mutually_exclusive = kwargs.pop('mutually_exclusive', None)
                 if not groupname:
-                    raise NoGroupforOption(
-                        "Option %s requires either 'group' or 'dest'." % self)
+                    raise NoGroupForOption(
+                        "%s requires either 'group' or 'dest'." % self)
                 description = kwargs.pop('group_description', None)
                 exists = [grp for grp in parser._action_groups
                           if grp.title == groupname]
