@@ -219,7 +219,7 @@ class Option(object):
         updater = {k: v for k, v in copy.copy(self.__dict__).items()
                    if k not in ('args', 'kwargs')}
         newone.__dict__.update(updater)
-        assert not newone.kwargs is self.kwargs
+        assert newone.kwargs is not self.kwargs
         return newone
 
     def __repr__(self):
@@ -335,7 +335,8 @@ class Config(collections.MutableMapping):
 
     """Parses configuration sources."""
 
-    def __init__(self, options=None, ini_paths=None, argv=None, **parser_kwargs):
+    def __init__(self, options=None, ini_paths=None, argv=None,
+                 **parser_kwargs):
         """Initialize with list of options.
 
         :param ini_paths: optional paths to ini files to look up values from
@@ -593,7 +594,8 @@ class Config(collections.MutableMapping):
                 if option.dest not in results or results[option.dest] is None:
                     if getattr(option, '_mutexgroup', None):
                         raise_for_group.setdefault(option._mutexgroup, [])
-                        raise_for_group[option._mutexgroup].append(option._action)
+                        raise_for_group[option._mutexgroup].append(
+                            option._action)
                     else:
                         raise SystemExit("'%s' is required. See --help "
                                          "for more info." % option.name)
@@ -693,7 +695,8 @@ class MetaConfig(Config):
     """
 
     option_group = 'initialization (metaconfig) arguments'
-    option_description = 'evaluated first and can be used to source an entire config'
+    option_description = ('evaluated first and can be used to '
+                          'source an entire config')
 
     options = [
         Option('--ini', metavar='PATH',
@@ -773,7 +776,7 @@ if __name__ == '__main__':
         Option('--key-thing', group='secret'),
         Option('--this', group='things'),
         Option('--who', group='group of its own'),
-        #Option('--more', mutually_exclusive=True),  # should fail
+        #  Option('--more', mutually_exclusive=True),  # should fail
         Option('--more', mutually_exclusive=True, dest='more'),  # should be ok
         Option('--less', mutually_exclusive=True, dest='more'),  # should be ok
     ]
