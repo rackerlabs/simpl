@@ -140,15 +140,18 @@ argparser), the `dest` parameter (also a standard argparse feature), and the
 
     contrib.config.Option(
         '--my-pkey',
-        mutually_exclusive_group='my_key',
+        group='my_key',
+        mutually_exclusive=True
         env='MY_PKEY'),
     contrib.config.Option(
         '--my-pkey-file',
         type=contrib.config.read_from,  # get the file contents (or err out)
         dest='my_pkey',  # write to the same dest as the string option
-        mutually_exclusive_group='my_key',  # only one options should be set
+        group='my_key',  # only one options should be set
+        mutually_exclusive=True,
         env='MY_PKEY_FILE')
 """
+from __future__ import print_function
 
 import argparse
 import collections
@@ -166,6 +169,16 @@ except ImportError:
 LOG = logging.getLogger(__name__)
 
 
+class SimplConfigError(Exception):
+
+    """Base class for exceptions."""
+
+
+class NoGroupForOption(SimplConfigError):
+
+    """Mutually exclusive option requires a group name."""
+
+
 class Option(object):
 
     """Holds a configuration option and the names and locations for it.
@@ -176,16 +189,47 @@ class Option(object):
 
         env: the name of the environment variable to use for this option
         ini_section: the ini file section to look this value up from
-        mutually_exclusive_group: the name of the mutually exclusive group
-                                  this option will be a part of.
+        group:              The name of the option/argument group.
+                            This is used to organize your Options in the
+                            help/usage output when -h or --help is invoked.
+                            It is also used to organize mutually exclusive
+                            argument groups if it is set and
+                            'mutually_exclusive' is set to True.
+        mutually_exclusive: Treat the option as mutually exclusive with other
+                            Options in the same 'group'. Using along with an
+                            explicit 'group' is highly recommended, otherwise
+                            the group name will use 'dest'. This fallback
+                            works well for multiple options which ultimately
+                            populate the same config value but have different
+                            types. e.g. --key and --key-file both of which
+                            have 'dest' of "key".
     """
 
     def __init__(self, *args, **kwargs):
         """Initialize options."""
         self.args = args or []
         self.kwargs = kwargs or {}
-        self._megroup = None
         self._action = None
+        self._mutexgroup = None
+
+    def __copy__(self):
+        cpargs = copy.copy(self.args)
+        cpkwargs = copy.copy(self.kwargs)
+        newone = type(self)(*cpargs, **cpkwargs)
+        updater = {k: v for k, v in copy.copy(self.__dict__).items()
+                   if k not in ('args', 'kwargs')}
+        newone.__dict__.update(updater)
+        assert newone.kwargs is not self.kwargs
+        return newone
+
+    def __repr__(self):
+        args = ', '.join(self.args)
+        kwrgs = ', '.join(['%s=%s' % (k, v) for k, v in self.kwargs.items()])
+        rpr = 'Option(%s' % args
+        if kwrgs:
+            rpr = '%s, %s' % (rpr, kwrgs)
+        rpr = '%s)' % rpr
+        return rpr
 
     def add_argument(self, parser, permissive=False, **override_kwargs):
         """Add an option to a an argparse parser.
@@ -194,6 +238,7 @@ class Option(object):
             required arguments.
         """
         kwargs = {}
+        required = None
         if self.kwargs:
             kwargs = copy.copy(self.kwargs)
             if 'env' in kwargs and 'help' in kwargs:
@@ -201,7 +246,7 @@ class Option(object):
                                                      kwargs['env'])
             if permissive:
                 try:
-                    del kwargs['required']
+                    required = kwargs.pop('required', None)
                 except KeyError:
                     pass
             try:
@@ -212,29 +257,47 @@ class Option(object):
                 del kwargs['ini_section']
             except KeyError:
                 pass
-            if 'mutually_exclusive_group' in kwargs:
-                required = kwargs.pop('required', None)
-                groupname = kwargs.pop('mutually_exclusive_group')
-                megroup = [grp for grp in parser._mutually_exclusive_groups
-                           if grp.title == groupname]
-                if megroup:
-                    if len(megroup) != 1:
-                        raise ValueError(
-                            "Bug: Mutiple mutually exclusive "
-                            "groups with the same title were found.")
-                    megroup = megroup[0]
-                    action = megroup.add_argument(*self.args, **kwargs)
-                else:
-                    megroup = parser.add_mutually_exclusive_group(
-                        required=required)
-                    megroup.title = groupname
-                    action = megroup.add_argument(*self.args, **kwargs)
-                self._megroup = megroup
-                self._action = action
 
+            # allow custom and/or exclusive argument groups
+            if kwargs.get('group') or kwargs.get('mutually_exclusive'):
+                groupname = kwargs.pop('group', None) or kwargs.get('dest')
+                mutually_exclusive = kwargs.pop('mutually_exclusive', None)
+                if not groupname:
+                    raise NoGroupForOption(
+                        "%s requires either 'group' or 'dest'." % self)
+                description = kwargs.pop('group_description', None)
+                exists = [grp for grp in parser._action_groups
+                          if grp.title == groupname]
+                if exists:
+                    group = exists[0]
+                    if description and not group.description:
+                        group.description = description
+                else:
+                    group = parser.add_argument_group(
+                        title=groupname, description=description)
+                if mutually_exclusive:
+                    if not required:
+                        required = kwargs.pop('required', None)
+                    mutexg_title = ('%s mutually-exclusive-group' % groupname)
+                    exists = [grp for grp in group._mutually_exclusive_groups
+                              if grp.title == mutexg_title]
+                    if exists:
+                        group = exists[0]
+                    else:
+                        # extend parent group
+                        group = group.add_mutually_exclusive_group(
+                            required=required)
+                        group.title = mutexg_title
+                    # if any in the same group are required, then the
+                    # mutually exclusive group should be set to required
+                    if required and not group.required:
+                        group.required = required
+                    self._mutexgroup = group
+                self._action = group.add_argument(*self.args, **kwargs)
                 return
+
         kwargs.update(override_kwargs)
-        parser.add_argument(*self.args, **kwargs)
+        self._action = parser.add_argument(*self.args, **kwargs)
 
     @property
     def type(self):
@@ -272,18 +335,24 @@ class Config(collections.MutableMapping):
 
     """Parses configuration sources."""
 
-    def __init__(self, options=None, ini_paths=None, **parser_kwargs):
+    def __init__(self, options=None, ini_paths=None, argv=None,
+                 **parser_kwargs):
         """Initialize with list of options.
 
         :param ini_paths: optional paths to ini files to look up values from
         :param parser_kwargs: kwargs used to init argparse parsers.
+        :param argv: argument strings (defaults to sys.argv)
         """
         self._parser_kwargs = parser_kwargs or {}
         self._ini_paths = ini_paths or []
         self._options = copy.copy(options) or []
         self._values = {option.name: option.default
                         for option in self._options}
+        self._argv = argv
+        self._metaconfigure(argv=self._argv)
         self._parser = argparse.ArgumentParser(**parser_kwargs)
+        self._prog = None
+        self.ini_config = None
         self.pass_thru_args = []
 
     @classmethod
@@ -296,7 +365,45 @@ class Config(collections.MutableMapping):
     @property
     def prog(self):
         """Program name."""
-        return self._parser.prog
+        if not self._prog:
+            self._prog = self._parser.prog
+        return self._prog
+
+    @prog.setter
+    def prog(self, value):
+        self._prog = value
+
+    @property
+    def default_ini(self):
+        """Default ini file name."""
+        return '%s.ini' % self.prog
+
+    def _metaconfigure(self, argv=None):
+        """Initialize metaconfig for provisioning self."""
+        metaconfig = self._get_metaconfig_class()
+        if not metaconfig:
+            return
+        if self.__class__ is metaconfig:
+            # don't get too meta
+            return
+        override = {
+            'conflict_handler': 'resolve',
+            'add_help': False,
+            'prog': self._parser_kwargs.get('prog'),
+        }
+        self._metaconf = metaconfig(**override)
+        metaparser = self._metaconf.build_parser(
+            options=self._metaconf._options, permissive=False, **override)
+        self._parser_kwargs.setdefault('parents', [])
+        self._parser_kwargs['parents'].append(metaparser)
+        self._metaconf.parse(argv=argv)
+        self._metaconf.provision(self)
+
+    @staticmethod
+    def _get_metaconfig_class():
+        """Return the metaconfig class to be used."""
+        # override this to disable/modify metaconfig behavior
+        return MetaConfig
 
     def __getitem__(self, key):
         """Get item from config."""
@@ -353,7 +460,7 @@ class Config(collections.MutableMapping):
             arguments.
         """
         if argv is None:
-            argv = sys.argv
+            argv = self._argv or sys.argv
         options = []
         for option in self._options:
             kwargs = option.kwargs.copy()
@@ -396,11 +503,18 @@ class Config(collections.MutableMapping):
 
     def get_defaults(self):
         """Use argparse to determine and return dict of defaults."""
-        parser = self.build_parser(self._options, permissive=True)
+        # dont need 'required' to determine the default
+        options = [copy.copy(opt) for opt in self._options]
+        for opt in options:
+            try:
+                del opt.kwargs['required']
+            except KeyError:
+                pass
+        parser = self.build_parser(options, permissive=True)
         parsed, _ = parser.parse_known_args([])
         return vars(parsed)
 
-    def parse_ini(self, paths=None):
+    def parse_ini(self, paths=None, namespace=None):
         """Parse config files and return configuration options.
 
         Expects array of files that are in ini format.
@@ -408,17 +522,37 @@ class Config(collections.MutableMapping):
                       If not supplied, uses the ini_paths value supplied on
                       initialization.
         """
+        namespace = namespace or self.prog
         results = {}
-        config = ConfigParser.SafeConfigParser()
-        config.read(paths or self._ini_paths)
+        self.ini_config = ConfigParser.SafeConfigParser()
+
+        if os.path.isfile(self.default_ini) and (
+                self.default_ini not in self._ini_paths):
+            self._ini_paths.append(self.default_ini)
+
+        parser_errors = (ConfigParser.NoOptionError,
+                         ConfigParser.NoSectionError)
+        self.ini_config.read(paths or reversed(self._ini_paths))
         for option in self._options:
             ini_section = option.kwargs.get('ini_section')
+            value = None
             if ini_section:
                 try:
-                    value = config.get(ini_section, option.name)
+                    value = self.ini_config.get(ini_section, option.name)
                     results[option.dest] = option.type(value)
-                except ConfigParser.NoSectionError:
-                    pass
+                except parser_errors as err:
+                    # this is an ERROR and the next one is a DEBUG b/c
+                    # this code is executed only if the Option is defined
+                    # with the ini_section keyword argument
+                    LOG.error('Error parsing ini file: %r -- Continuing.',
+                              err)
+            if not value:
+                try:
+                    value = self.ini_config.get(namespace, option.name)
+                    results[option.dest] = option.type(value)
+                except parser_errors as err:
+                    LOG.debug('Error parsing ini file: %r -- Continuing.',
+                              err)
         return results
 
     def parse_keyring(self, namespace=None):
@@ -458,15 +592,16 @@ class Config(collections.MutableMapping):
         for option in self._options:
             if option.kwargs.get('required'):
                 if option.dest not in results or results[option.dest] is None:
-                    if getattr(option, '_megroup', None):
-                        raise_for_group.setdefault(option._megroup, [])
-                        raise_for_group[option._megroup].append(option._action)
+                    if getattr(option, '_mutexgroup', None):
+                        raise_for_group.setdefault(option._mutexgroup, [])
+                        raise_for_group[option._mutexgroup].append(
+                            option._action)
                     else:
                         raise SystemExit("'%s' is required. See --help "
                                          "for more info." % option.name)
                 else:
-                    if getattr(option, '_megroup', None):
-                        raise_for_group.pop(option._megroup, None)
+                    if getattr(option, '_mutexgroup', None):
+                        raise_for_group.pop(option._mutexgroup, None)
         if raise_for_group:
             optstrings = [str(k.option_strings)
                           for k in raise_for_group.values()[0]]
@@ -490,6 +625,104 @@ class Config(collections.MutableMapping):
         """Display configured values when representing instance."""
         return "<Config %s>" % ', '.join([
             '%s=%s' % (k, v) for k, v in self.items()])
+
+
+class MetaConfig(Config):
+
+    """A config class used by Config to find and evaluate config sources.
+
+    This class provides a workaround for a catch 22 where an application
+    may want to specify a different source for config values (other than
+    command line, environment variables, keyring, etc.) but should be able
+    to specify that source in the same way any other option is specified.
+    If you wanted to add --config-file to your basic list of Options in order
+    to populate your entire config with values found in the config file, you
+    would need to write special logic for handling that particular option.
+    Instead, --config-file can be added to your MetaConfig's options, and
+    any options gathered from the config file will be passed directly to
+    your primary Config and from there the logic flows as usual.
+
+    Out of the box, this class supports --ini, and this class will be
+    defined as the default MetaConfig class for Config.
+
+    Example using --ini
+
+        # myapp-dev.ini
+        [myapp]
+        capacity = large
+        duration = 60
+
+        # myapp.py
+        from config import Config
+        options = [
+            Option('--capacity'),
+            Option('--duration'),
+            Option('--year'),
+        ]
+        c = Config(prog='myapp', options=options)
+        c.parse()
+        print 'config:'
+        print c
+
+        # run
+        $ myapp.py --ini myapp-dev.ini --year 1995
+            config:
+            {
+                'capacity': 'large',
+                'duration': 60,
+                'year': 1995,
+            }
+
+    This class could be extended to support a network-based
+    meta option such as --json-url. The value could point to a url
+    which downloads a json file full of values for your Options. Then,
+    when running your app which leverages simpl/config, you would run:
+
+        (1)
+        $ ./myapp.py --json-url https://gist.com/usr/sha1/raw/myconf.json
+
+        OR
+
+        (2)
+        $ export MYAPP_JSON_URL=https://gist.com/usr/sha1/raw/myconf.json
+        $ ./myapp.py
+
+    which would then parse your environment using Config, where (1) would
+    find the command line argument's value for your initialization option
+    (aka meta options) and (2) would find the environment variable. Your
+    resulting Config instance would be populated by values found in the json
+    file downloaded from the url.
+    """
+
+    option_group = 'initialization (metaconfig) arguments'
+    option_description = ('evaluated first and can be used to '
+                          'source an entire config')
+
+    options = [
+        Option('--ini', metavar='PATH',
+               help=('Source some or all of the options from this ini file. '
+                     'Defaults to <program_name>.ini in your '
+                     'current working directory.'),
+               default='%s.ini' % sys.argv[0],
+               group=option_group, group_description=option_description),
+    ]
+
+    def __init__(self, options=None, **kwargs):
+        options = options or self.options
+        super(MetaConfig, self).__init__(options=options, **kwargs)
+
+    def provision(self, conf):
+        """Provision this metaconfig's config with what we gathered.
+
+        Since Config has native support for ini files, we just need to
+        let this metaconfig's config know about the ini file we found.
+
+        In future scenarios, this is where we would implement logic
+        specific to a metaconfig source if that source is not natively
+        supported by Config.
+        """
+        if self.ini and self.ini not in conf._ini_paths:
+            conf._ini_paths.insert(0, self.ini)
 
 
 def read_from(value):
@@ -530,3 +763,25 @@ def comma_separated_pairs(value):
 def parse_key_format(value):
     """Handle string formats of key files."""
     return value.strip("'").replace('\\n', '\n')
+
+
+if __name__ == '__main__':
+
+    opts = [
+        Option('--foo'),
+        Option('--bar'),
+        Option('--baz'),
+        Option('--key', group='secret', mutually_exclusive=True),
+        Option('--key-file', group='secret', mutually_exclusive=True),
+        Option('--key-thing', group='secret'),
+        Option('--this', group='things'),
+        Option('--who', group='group of its own'),
+        #  Option('--more', mutually_exclusive=True),  # should fail
+        Option('--more', mutually_exclusive=True, dest='more'),  # should be ok
+        Option('--less', mutually_exclusive=True, dest='more'),  # should be ok
+    ]
+    myconf = Config(options=opts)
+    if len(sys.argv) == 1:
+        sys.argv.append('--help')
+    myconf.parse()
+    print(myconf)
