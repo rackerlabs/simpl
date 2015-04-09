@@ -17,3 +17,12 @@ __version__ = '0.0.2'
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright Rackspace US, Inc. (c) 2015'
 __url__ = 'https://github.com/checkmate/simpl'
+
+import os
+
+from simpl import config
+from simpl import git
+from simpl.exceptions import *
+
+
+IS_TRAVIS_CI_ENV = all(map(os.environ.get, ['TRAVIS', 'CI']))
