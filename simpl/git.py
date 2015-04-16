@@ -66,7 +66,7 @@ def execute_git_command(command, repo_dir=None):
 
 def git_version():
     """Get the `git version`."""
-    return execute_git_command('git --version')
+    return execute_git_command(['git', '--version'])
 
 
 def check_git_version():
@@ -114,7 +114,7 @@ check_git_version()
 
 def git_init(repo_dir):
     """Run git init in `repo_dir'."""
-    return execute_git_command('git init', repo_dir=repo_dir)
+    return execute_git_command(['git', 'init'], repo_dir=repo_dir)
 
 
 def git_clone(target_dir, repo_location, branch_or_tag=None, verbose=True):
@@ -125,31 +125,31 @@ def git_clone(target_dir, repo_location, branch_or_tag=None, verbose=True):
     """
 
     target_dir = pipes.quote(target_dir)
-    command = 'git clone'
+    command = ['git', 'clone']
     if verbose:
         command.append('--verbose')
     if os.path.isdir(repo_location):
         command.append('--no-hardlinks')
     command.extend([pipes.quote(repo_location), target_dir])
     if branch_or_tag:
-        command = "%s --branch %s" % (command, branch_or_tag)
+        command.extend(['--branch', branch_or_tag])
     return execute_git_command(command)
 
 
 def git_tag(repo_dir, tagname, message=None, force=True):
     """Create an annotated tag at the current head."""
-    message = pipes.quote(message or "%s" % tagname)
-    command = 'git tag --annotate --message %s' % message
+    message = message or "%s" % tagname
+    command = ['git', 'tag', '--annotate', '--message', message]
     if force:
-        command = "%s --force" % command
+        command.append('--force')
     # append the tag as the final arg
-    command = "%s %s" % (command, pipes.quote(tagname))
+    command.append(tagname)
     return execute_git_command(command, repo_dir=repo_dir)
 
 
 def git_list_config(repo_dir):
     """Return a list of the git configuration."""
-    command = 'git config --list'
+    command = ['git', 'config', '--list']
     raw = execute_git_command(command, repo_dir=repo_dir).splitlines()
     output = {key: val for key, val in
               [cfg.split('=', 1) for cfg in raw]}
@@ -161,9 +161,9 @@ def git_list_config(repo_dir):
 
 def git_list_tags(repo_dir, with_messages=False):
     """Return a list of git tags for the git repo in `repo_dir'."""
-    command = 'git tag -l'
+    command = ['git', 'tag', '-l']
     if with_messages:
-        command = "%s -n1" % command
+        command.append('-n1')
     raw = execute_git_command(command, repo_dir=repo_dir).splitlines()
     output = [l.strip() for l in raw if l.strip()]
     if with_messages:
@@ -183,7 +183,8 @@ def git_list_branches(repo_dir):
             {...},
         ]
     """
-    command = "git branch --remotes --all --verbose --no-abbrev"
+    command = ['git', 'branch', '--remotes', '--all',
+               '--verbose', '--no-abbrev']
     output = execute_git_command(command, repo_dir=repo_dir).splitlines()
     # remove nullish lines
     lines = [l.strip() for l in output if l.strip()]
@@ -263,11 +264,12 @@ def git_ls_remote(repo_dir, remote='origin', refs=None):
          <refN>: <commit_hashN>,
         }
     """
-    command = 'git ls-remote %s' % remote
+    command = ['git', 'ls-remote', pipes.quote(remote)]
     if refs:
         if isinstance(refs, list):
-            refs = " ".join(refs)
-        command = "%s %s" % (command, refs)
+            command.extend(refs)
+        else:
+            command.append(refs)
     raw = execute_git_command(command, repo_dir=repo_dir).splitlines()
     output = [l.strip() for l in raw if l.strip()
               and not l.strip().lower().startswith('from ')]
@@ -278,7 +280,9 @@ def git_ls_remote(repo_dir, remote='origin', refs=None):
 def git_branch(repo_dir, branch_name, start_point='HEAD',
                force=True, verbose=True, checkout=False):
     """Create a new branch like `git branch <branch_name> <start_point>`."""
-    command = 'git branch'
+    command = ['git', 'branch']
+    if verbose:
+        command.append('--verbose')
     if force:
         command.append('--force')
     command.extend([branch_name, start_point])
@@ -325,9 +329,9 @@ def git_fetch(repo_dir, remote=None, refspec=None, verbose=False, tags=True):
 
 def git_pull(repo_dir, remote="origin", ref=None):
     """Do a git pull of `ref' from `remote'."""
-    command = 'git pull --update-head-ok %s' % remote
+    command = ['git', 'pull', '--update-head-ok', pipes.quote(remote)]
     if ref:
-        command = "%s %s" % (command, pipes.quote(ref))
+        command.append(ref)
     return execute_git_command(command, repo_dir=repo_dir)
 
 
@@ -335,22 +339,22 @@ def git_commit(repo_dir, message=None, amend=False, stage=True):
     """Commit any changes, optionally staging all changes beforehand."""
     if stage:
         git_add_all(repo_dir)
-    command = "git commit --allow-empty"
+    command = ['git', 'commit', '--allow-empty']
     if amend:
-        command = "%s --amend" % command
+        command.append('--amend')
         if not message:
-            command = "%s --no-edit" % command
+            command.append('--no-edit')
     if message:
         command.extend(['--message', pipes.quote(message)])
     elif not amend:
         # if not amending and no message, allow an empty message
-        command = "%s --message='' --allow-empty-message" % command
+        command.extend(['--message=', '--allow-empty-message'])
     return execute_git_command(command, repo_dir=repo_dir)
 
 
 def git_ls_tree(repo_dir, treeish='HEAD'):
     """Run git ls-tree."""
-    command = "git ls-tree -r --full-tree %s" % treeish
+    command = ['git', 'ls-tree', '-r', '--full-tree', treeish]
     raw = execute_git_command(command, repo_dir=repo_dir).splitlines()
     output = [l.strip() for l in raw if l.strip()]
     # <mode> <type> <object> <file>
@@ -362,18 +366,20 @@ def git_ls_tree(repo_dir, treeish='HEAD'):
 
 def git_add_all(repo_dir):
     """Stage all changes in the working tree."""
-    return execute_git_command('git add --all', repo_dir=repo_dir)
+    command = ['git', 'add', '--all']
+    return execute_git_command(command, repo_dir=repo_dir)
 
 
 def git_status(repo_dir):
     """Get the working tree status."""
-    return execute_git_command('git status', repo_dir=repo_dir)
+    command = ['git', 'status']
+    return execute_git_command(command, repo_dir=repo_dir)
 
 
 def git_head_commit(repo_dir):
     """Return the current commit hash head points to."""
-    return execute_git_command(
-        'git rev-parse HEAD', repo_dir=repo_dir)
+    command = ['git', 'rev-parse', 'HEAD']
+    return execute_git_command(command, repo_dir=repo_dir)
 
 
 def git_current_branch(repo_dir):
@@ -387,8 +393,9 @@ def git_current_branch(repo_dir):
 
 def is_git_repo(repo_dir):
     """Return True if the directory is inside a git repo."""
+    command = ['git', 'rev-parse']
     try:
-        execute_git_command('git rev-parse', repo_dir=repo_dir)
+        execute_git_command(command, repo_dir=repo_dir)
     except exceptions.SimplGitCommandError:
         return False
     else:

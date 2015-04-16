@@ -15,6 +15,7 @@
 """Shell (subprocess) utilities."""
 
 import logging
+import pipes
 import shlex
 import subprocess
 
