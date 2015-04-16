@@ -26,3 +26,4 @@ from simpl.exceptions import *
 
 
 IS_TRAVIS_CI_ENV = all(map(os.environ.get, ['TRAVIS', 'CI']))
+

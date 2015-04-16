@@ -20,6 +20,15 @@ calling the disable() classmethod.
 
 import warnings
 
+__all__ = [
+    'GitWarning',
+    'SimplException',
+    'SimplGitError',
+    'SimplGitCommandError',
+    'SimplGitNotRepo',
+    'SimplCalledProcessError',
+]
+
 
 class GitWarning(RuntimeWarning):
 
