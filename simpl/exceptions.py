@@ -12,7 +12,26 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-#
+"""Simpl exceptions and warnings.
+
+Warnings can be imported and subsequently disabled by
+calling the disable() classmethod.
+"""
+
+import warnings
+
+
+class GitWarning(RuntimeWarning):
+
+    """The local git program is missing or may be incompatible."""
+
+    @classmethod
+    def disable(cls):
+        """Disable warnings of this type."""
+        return warnings.simplefilter('ignore', cls)
+
+# shown until proven ignored :)
+warnings.simplefilter('always', GitWarning)
 
 
 class SimplException(Exception):
@@ -30,7 +49,10 @@ class SimplGitError(SimplException):
 
 class SimplGitCommandError(SimplGitError):
 
+    """Raised when an error occurs while trying a git command."""
+
     def __init__(self, returncode, cmd, output=None, oserror=None):
+        super(SimplGitCommandError, self).__init__()
         self.returncode = returncode
         self.cmd = cmd
         self.output = output
@@ -56,17 +78,19 @@ class SimplGitNotRepo(SimplGitError):
 
 
 class SimplCalledProcessError(SimplException):
+
     """Raised when a process run by execute() returns non-zero.
 
     The exit status will be stored in the returncode attribute;
     check_output() will also store the output in the output attribute.
     """
+
     def __init__(self, returncode, cmd, output=None):
+        super(SimplCalledProcessError, self).__init__()
         self.returncode = returncode
         self.cmd = cmd
         self.output = output
+
     def __str__(self):
         return ("Command '%s' returned non-zero exit status %d"
                 % (self.cmd, self.returncode))
-
-

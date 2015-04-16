@@ -92,7 +92,8 @@ def check_git_version():
     try:
         version = git_version()
     except exceptions.SimplGitCommandError:
-        warnings.warn("Git does not appear to be installed!", RuntimeWarning)
+        warnings.warn("Git does not appear to be installed!",
+                      exceptions.GitWarning)
         return
 
     ver_num = version.split()[2]
@@ -105,7 +106,7 @@ def check_git_version():
             "is recommended for simpl/git.py"
             % dict(ver=ver_num,
                    rec='.'.join((str(x) for x in MIN_GIT_VERSION))),
-            RuntimeWarning)
+            exceptions.GitWarning)
 
 # Check the git version whenever this module is used:
 check_git_version()
