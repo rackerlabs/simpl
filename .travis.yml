@@ -8,4 +8,4 @@ install:
 before_script:
   - "git --version"
 # command to run tests
-script: nosetests
+script: nosetests --logging-level=DEBUG
