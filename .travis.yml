@@ -9,3 +9,5 @@ before_script:
   - "git --version"
 # command to run tests
 script: nosetests --logging-level=DEBUG
+# The following line tells Travis CI to build in a container
+sudo: false
