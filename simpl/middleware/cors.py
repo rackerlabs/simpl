@@ -15,10 +15,21 @@
 """CORS Middleware used by the Checkmate Server."""
 
 import logging
+import urlparse
 
-import webob
+try:
+    import webob
+except ImportError:
+    webob = None
 
-from checkmate.contrib import urlparse
+from simpl import exceptions as simpl_exc
+
+if not webob:
+    import warnings
+    warnings.warn("This module, simpl.middleware.cors, "
+                  "requires the 'WebOb' package.",
+                  simpl_exc.DependencyRequired)
+
 
 LOG = logging.getLogger(__name__)
 
@@ -69,7 +80,6 @@ class CORSMiddleware(object):
                 response.headerlist = [
                     ('Access-Control-Allow-Methods', self.allowed_methods),
                     ('Access-Control-Allow-Headers', self.allowed_headers),
-                    ('Access-Control-Allow-Credentials', 'true'),
                 ]
                 return response(environ, start_response)
             environ['CORS_TRUSTED_ORIGIN'] = True
