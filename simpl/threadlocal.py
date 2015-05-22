@@ -3,6 +3,7 @@ import collections
 import threading
 
 THREAD_STORE = threading.local()
+DEFAULT_NAMESPACE = 'call_context'
 
 
 class LocalDict(collections.MutableMapping):
@@ -38,7 +39,7 @@ class LocalDict(collections.MutableMapping):
         self._get_local_dict().__delitem__(key)
 
 
-CONTEXT = LocalDict('call_context')
+CONTEXT = ThreadLocalDict(DEFAULT_NAMESPACE)
 
 
 def get_context():
