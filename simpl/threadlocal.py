@@ -48,6 +48,11 @@ class ThreadLocalDict(collections.MutableMapping):
 CONTEXT = ThreadLocalDict(DEFAULT_NAMESPACE)
 
 
-def get_context():
+def default():
     """Get thread-local call context."""
     return CONTEXT
+
+
+def new(namespace):
+    """Get a namespaced ThreadLocalDict."""
+    return ThreadLocalDict(namespace)
