@@ -1,4 +1,38 @@
-"""Threadlocal."""
+"""Thread-local context utilities.
+
+Usage:
+
+    import threadlocal
+
+    context = threadlocal.default()
+    context['value'] = 'foo'
+
+    # somewhere in another module (must be same thread!)
+    assert context['value'] == 'foo''
+
+    # create multiple dicts in the same thread
+    # with different namespaces
+    alt_context = threadlocal.new('custom-namespace')
+    alt_context['value'] = 'bar'
+
+    # put an existing dict into your threadlocal context
+    context = {'one': 'two', 'buckle': 'shoe'}
+    ok = threadlocal.ThreadLocalDict('another-namespace', **context)
+    assert ok['buckle'] == 'shoe'
+
+    # threads cannot access each others' ThreadLocalDicts !
+    import threading
+
+    threadlocal.default()['foo'] == 'value!'
+    def foo_is_none(tld):
+        assert threadlocal.default().get('foo') is None
+
+    # the new thread *will not* show a value for 'foo' !
+    t = threading.Thread(target=foo_is_none, args=(threadlocal.default(),))
+    t.start()
+    t.join()
+"""
+
 import collections
 import threading
 
