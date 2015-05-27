@@ -10,8 +10,8 @@ class ThreadLocalDict(collections.MutableMapping):
 
     """A dict whose data is local to the thread."""
 
-    def __init__(self, varname, *args, **kwargs):
-        self.varname = varname
+    def __init__(self, namespace, *args, **kwargs):
+        self.namespace = namespace
         self.args = args
         self.kwargs = kwargs
 
@@ -22,11 +22,12 @@ class ThreadLocalDict(collections.MutableMapping):
 
     def _get_local_dict(self):
         """Retrieve (or initialize) the thread-local data to use."""
-        local_var = getattr(THREAD_STORE, self.varname, None)
-        if not local_var:
+        try:
+            return getattr(THREAD_STORE, self.namespace)
+        except AttributeError:
             local_var = dict(*self.args, **self.kwargs)
-            setattr(THREAD_STORE, self.varname, local_var)
-        return local_var
+            setattr(THREAD_STORE, self.namespace, local_var)
+            return local_var
 
     def __len__(self):
         return len(self._get_local_dict())
