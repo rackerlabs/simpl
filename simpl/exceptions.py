@@ -21,6 +21,8 @@ calling the disable() classmethod.
 import warnings
 
 __all__ = [
+    'SimplWarning',
+    'DependencyRequired',
     'GitWarning',
     'SimplException',
     'SimplGitError',
@@ -30,14 +32,28 @@ __all__ = [
 ]
 
 
-class GitWarning(RuntimeWarning):
+class SimplWarning(Warning):
 
-    """The local git program is missing or may be incompatible."""
+    """Base class for all Simpl warnings."""
 
     @classmethod
     def disable(cls):
         """Disable warnings of this type."""
         return warnings.simplefilter('ignore', cls)
+
+
+class DependencyRequired(SimplWarning, ImportWarning):
+
+    """The simpl module requires a missing dependency."""
+
+# ImportWarning is disabled by default, make this warn
+warnings.simplefilter('default', DependencyRequired)
+
+
+class GitWarning(SimplWarning, RuntimeWarning):
+
+    """The local git program is missing or may be incompatible."""
+
 
 # shown until proven ignored :)
 warnings.simplefilter('always', GitWarning)
