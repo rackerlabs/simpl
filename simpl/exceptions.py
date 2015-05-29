@@ -18,6 +18,7 @@ Warnings can be imported and subsequently disabled by
 calling the disable() classmethod.
 """
 
+import functools
 import warnings
 
 __all__ = [
@@ -45,6 +46,34 @@ class SimplWarning(Warning):
 class DependencyRequiredWarning(SimplWarning, ImportWarning):
 
     """The simpl module requires a missing dependency."""
+
+    msg = ("The module {import_string} requires the '{requirement}' "
+           "package/module.\n(from {from_exc})")
+
+    @classmethod
+    def filter(cls, import_string='.*', requirement='.*', from_exc='.*'):
+        """Build regex from the msg class attribute & filter those warnings."""
+        msg = cls.msg
+        escape_chars = '.()\n'
+        msg = functools.reduce(
+            lambda x, y: str.replace(x, y, r'\%s' % y), escape_chars, msg)
+        regex_msg = msg.format(
+            import_string=import_string,
+            requirement=requirement,
+            from_exc=from_exc
+        )
+        return warnings.filterwarnings(
+            'ignore', message=regex_msg, category=cls)
+
+    @classmethod
+    def format_msg(cls, import_string='', requirement='', from_exc=''):
+        """Return an interpolated canonical warning message."""
+        warn_msg = cls.msg.format(
+            import_string=import_string,
+            requirement=requirement,
+            from_exc=from_exc
+        )
+        return warn_msg
 
 # ImportWarning is disabled by default, make this warn
 warnings.simplefilter('default', DependencyRequiredWarning)
