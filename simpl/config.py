@@ -213,6 +213,7 @@ class Option(object):
         self._mutexgroup = None
 
     def __copy__(self):
+        """Implement copy."""
         cpargs = copy.copy(self.args)
         cpkwargs = copy.copy(self.kwargs)
         newone = type(self)(*cpargs, **cpkwargs)
@@ -223,6 +224,7 @@ class Option(object):
         return newone
 
     def __repr__(self):
+        """Customize repr to show option args and kwargs."""
         args = ', '.join(self.args)
         kwrgs = ', '.join(['%s=%s' % (k, v) for k, v in self.kwargs.items()])
         rpr = 'Option(%s' % args
@@ -371,6 +373,7 @@ class Config(collections.MutableMapping):
 
     @prog.setter
     def prog(self, value):
+        """Set program name."""
         self._prog = value
 
     @property
@@ -708,6 +711,7 @@ class MetaConfig(Config):
     ]
 
     def __init__(self, options=None, **kwargs):
+        """TODO(zns): add docstring."""
         options = options or self.options
         super(MetaConfig, self).__init__(options=options, **kwargs)
 
@@ -765,8 +769,8 @@ def parse_key_format(value):
     return value.strip("'").replace('\\n', '\n')
 
 
-if __name__ == '__main__':
-
+def main():
+    """Simple tests."""
     opts = [
         Option('--foo'),
         Option('--bar'),
@@ -785,3 +789,6 @@ if __name__ == '__main__':
         sys.argv.append('--help')
     myconf.parse()
     print(myconf)
+
+if __name__ == '__main__':
+    main()

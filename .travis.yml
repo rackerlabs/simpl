@@ -10,5 +10,6 @@ script: tox
 env:
   - TOXENV=py27
   - TOXENV=py34
+  - TOXENV=style
 # The following line tells Travis CI to build in a container
 sudo: false

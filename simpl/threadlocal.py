@@ -1,3 +1,16 @@
+# All Rights Reserved.
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+#
 """Thread-local context utilities.
 
 Usage:
@@ -45,12 +58,13 @@ class ThreadLocalDict(collections.MutableMapping):
     """A dict whose data is local to the thread."""
 
     def __init__(self, namespace, *args, **kwargs):
+        """Add namespace to dict constructor."""
         self.namespace = namespace
         self.args = args
         self.kwargs = kwargs
 
     def __repr__(self):
-
+        """Show thread-local dict in repr."""
         under = repr(self._get_local_dict())
         return '<%s %s>' % (type(self).__name__, under)
 
@@ -64,18 +78,23 @@ class ThreadLocalDict(collections.MutableMapping):
             return local_var
 
     def __len__(self):
+        """Return the length of the thread-local dict."""
         return len(self._get_local_dict())
 
     def __iter__(self):
+        """Return an iterator on the thread-local dict."""
         return iter(self._get_local_dict())
 
     def __getitem__(self, key):
+        """Get item on the thread-local dict."""
         return self._get_local_dict()[key]
 
     def __setitem__(self, key, value):
+        """Set item on the thread-local dict."""
         self._get_local_dict()[key] = value
 
     def __delitem__(self, key):
+        """Delete item from the thread-local dict."""
         self._get_local_dict().__delitem__(key)
 
 

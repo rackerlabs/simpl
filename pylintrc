@@ -1,0 +1,8 @@
+[Messages Control]
+# W0511: TODOs in code comments are fine.
+# W0142: *args and **kwargs are fine.
+disable=W0511,W0142
+
+[BASIC]
+# Don't require docstrings on tests or Python Special Methods
+no-docstring-rgx=(__.*__|[tT]est.*|setUp|tearDown)

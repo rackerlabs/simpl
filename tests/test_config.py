@@ -162,7 +162,7 @@ class TestConfig(unittest.TestCase):
         # for read_from
         keystring = 'this-is-a-private-key'
         strfile = tempfile.NamedTemporaryFile()
-        strfile.write(('%s-written-to-file' % keystring).encode('ascii'))
+        strfile.write(('%s-written-to-file' % keystring).encode('utf-8'))
         strfile.flush()
 
         myconf = config.Config(options=opts)
@@ -196,7 +196,7 @@ class TestConfig(unittest.TestCase):
         # for read_from
         keystring = 'this-is-a-private-key'
         strfile = tempfile.NamedTemporaryFile()
-        strfile.write(('%s-written-to-file' % keystring).encode('ascii'))
+        strfile.write(('%s-written-to-file' % keystring).encode('utf-8'))
         strfile.flush()
 
         myconf = config.Config(options=opts)
@@ -316,7 +316,7 @@ class TestConfig(unittest.TestCase):
             config.Option('--spam'),
         ]
         strfile = tempfile.NamedTemporaryFile()
-        strfile.write(metaconf.encode('ascii'))
+        strfile.write(metaconf.encode('utf-8'))
         strfile.flush()
         argv = ['program', '--ini', strfile.name]
         myconf = config.Config(options=opts, argv=argv, prog='program')
@@ -345,7 +345,7 @@ class TestConfig(unittest.TestCase):
             config.Option('--grand'),
             config.Option('--spam'),
         ]
-        strfile.write(metaconf.encode('ascii'))
+        strfile.write(metaconf.encode('utf-8'))
         strfile.flush()
         argv = ['program', '--ini', strfile.name]
         myconf = config.Config(options=opts, argv=argv)

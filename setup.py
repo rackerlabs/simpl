@@ -18,7 +18,8 @@
 
 import ast
 import re
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from setuptools import setup
 
 
 DEPENDENCIES = [

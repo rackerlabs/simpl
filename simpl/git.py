@@ -28,8 +28,8 @@ import errno
 import logging
 import os
 import pipes
-import tempfile
 import shutil
+import tempfile
 import warnings
 
 from six.moves import zip_longest
@@ -124,7 +124,6 @@ def git_clone(target_dir, repo_location, branch_or_tag=None, verbose=True):
     If branch_or_tag is not specified, the HEAD of the primary
     branch of the cloned repo is checked out.
     """
-
     target_dir = pipes.quote(target_dir)
     command = ['git', 'clone']
     if verbose:
@@ -570,6 +569,7 @@ class GitRepo(object):
         return git_current_branch(self.repo_dir)
 
     def __repr__(self):
+        """Customize representation."""
         rpr = '<Simpl GitRepo'
         if self.temp:
             rpr += ' (tmp)'
@@ -713,6 +713,7 @@ class GitRepo(object):
 
 
 def _cleanup_tempdir(tempdir):
+    """Clean up temp directory ignoring ENOENT errors."""
     try:
         shutil.rmtree(tempdir)
     except OSError as err:

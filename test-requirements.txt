@@ -1,4 +1,8 @@
+# hacking is picky with its requirements, so let's have it run first.
+hacking            # requires flake8==2.2.4,pep8==1.5.7
+
 coverage
+flake8_docstrings
 mock
 nose
 nose-ignore-docstring

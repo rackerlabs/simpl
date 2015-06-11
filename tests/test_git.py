@@ -369,7 +369,7 @@ class TestGitRepo(TestGitBase):
     def test_commit_automatically_stages(self):
         temp = tempfile.NamedTemporaryFile(
             dir=self.repo.repo_dir, suffix='.simpltest')
-        temp.write("calmer than you are".encode('ascii'))
+        temp.write("calmer than you are".encode('utf-8'))
         temp.flush()
         msg = "1 file changed"
         output = self.repo.commit(message="dudeism")
@@ -388,7 +388,7 @@ class TestGitRepo(TestGitBase):
 
         temp = tempfile.NamedTemporaryFile(
             dir=self.repo.repo_dir, suffix='.simpltest')
-        temp.file.write("calmer than you are".encode('ascii'))
+        temp.file.write("calmer than you are".encode('utf-8'))
         self.repo.commit(message="dudeism")
         hash_after = self.repo.head
         self.repo.tag('tag_after_changes')
@@ -403,7 +403,7 @@ class TestGitRepo(TestGitBase):
         self.repo.tag('tag_before_changes')
         temp = tempfile.NamedTemporaryFile(
             dir=self.repo.repo_dir, suffix='.simpltest')
-        temp.file.write("calmer than you are".encode('ascii'))
+        temp.file.write("calmer than you are".encode('utf-8'))
         self.repo.commit(message="dudeism")
         hash_after = self.repo.head
         self.repo.tag('tag_after_changes')
