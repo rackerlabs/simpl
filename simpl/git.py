@@ -25,13 +25,14 @@ Tested against:
 
 import atexit
 import errno
-import itertools
 import logging
 import os
 import pipes
 import tempfile
 import shutil
 import warnings
+
+from six.moves import zip_longest
 
 from simpl import exceptions
 from simpl.utils import shell
@@ -211,7 +212,7 @@ def git_list_branches(repo_dir):
     breakout = [k for k in breakout if len(k[1]) == 40]
     headers = ['branch', 'commit', 'message']
     # use izip_longest so we fill in None if message was empty
-    result = [dict(itertools.izip_longest(headers, vals))
+    result = [dict(zip_longest(headers, vals))
               for vals in breakout]
     if item:
         result.append(item)
@@ -228,7 +229,7 @@ def git_list_remotes(repo_dir):
     headers = ['name', 'location', 'cmd']
     breakout = [k.split(None, len(headers)) for k in output]
     # use izip_longest so we fill in None if message was empty
-    return [dict(itertools.izip_longest(headers, vals))
+    return [dict(zip_longest(headers, vals))
             for vals in breakout]
 
 

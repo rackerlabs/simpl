@@ -22,6 +22,7 @@ from setuptools import setup, find_packages
 
 
 DEPENDENCIES = [
+    'six',
 ]
 TESTS_REQUIRE = [
     'mock',

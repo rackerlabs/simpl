@@ -155,7 +155,6 @@ from __future__ import print_function
 
 import argparse
 import collections
-import ConfigParser
 import copy
 import logging
 import os
@@ -165,6 +164,7 @@ try:
     import keyring
 except ImportError:
     keyring = None  # pylint: disable=C0103
+from six.moves import configparser
 
 LOG = logging.getLogger(__name__)
 
@@ -524,14 +524,14 @@ class Config(collections.MutableMapping):
         """
         namespace = namespace or self.prog
         results = {}
-        self.ini_config = ConfigParser.SafeConfigParser()
+        self.ini_config = configparser.SafeConfigParser()
 
         if os.path.isfile(self.default_ini) and (
                 self.default_ini not in self._ini_paths):
             self._ini_paths.append(self.default_ini)
 
-        parser_errors = (ConfigParser.NoOptionError,
-                         ConfigParser.NoSectionError)
+        parser_errors = (configparser.NoOptionError,
+                         configparser.NoSectionError)
         self.ini_config.read(paths or reversed(self._ini_paths))
         for option in self._options:
             ini_section = option.kwargs.get('ini_section')

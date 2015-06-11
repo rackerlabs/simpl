@@ -24,6 +24,7 @@ import textwrap
 import unittest
 
 import mock
+import six
 
 from simpl import config
 
@@ -32,7 +33,7 @@ class TestParsers(unittest.TestCase):
     def test_comma_separated_strings(self):
         expected = ['1', '2', '3']
         result = config.comma_separated_strings("1,2,3")
-        self.assertItemsEqual(result, expected)
+        six.assertCountEqual(self, result, expected)
 
     def test_format_comma_separated_pairs(self):
         expected = dict(A='1', B='2', C='3')
@@ -161,7 +162,7 @@ class TestConfig(unittest.TestCase):
         # for read_from
         keystring = 'this-is-a-private-key'
         strfile = tempfile.NamedTemporaryFile()
-        strfile.write('%s-written-to-file' % keystring)
+        strfile.write(('%s-written-to-file' % keystring).encode('ascii'))
         strfile.flush()
 
         myconf = config.Config(options=opts)
@@ -195,7 +196,7 @@ class TestConfig(unittest.TestCase):
         # for read_from
         keystring = 'this-is-a-private-key'
         strfile = tempfile.NamedTemporaryFile()
-        strfile.write('%s-written-to-file' % keystring)
+        strfile.write(('%s-written-to-file' % keystring).encode('ascii'))
         strfile.flush()
 
         myconf = config.Config(options=opts)
@@ -315,7 +316,7 @@ class TestConfig(unittest.TestCase):
             config.Option('--spam'),
         ]
         strfile = tempfile.NamedTemporaryFile()
-        strfile.write(metaconf)
+        strfile.write(metaconf.encode('ascii'))
         strfile.flush()
         argv = ['program', '--ini', strfile.name]
         myconf = config.Config(options=opts, argv=argv, prog='program')
@@ -344,7 +345,7 @@ class TestConfig(unittest.TestCase):
             config.Option('--grand'),
             config.Option('--spam'),
         ]
-        strfile.write(metaconf)
+        strfile.write(metaconf.encode('ascii'))
         strfile.flush()
         argv = ['program', '--ini', strfile.name]
         myconf = config.Config(options=opts, argv=argv)
