@@ -19,6 +19,8 @@ import pipes
 import shlex
 import subprocess
 
+import six
+
 from simpl import exceptions
 
 LOG = logging.getLogger(__name__)
@@ -57,7 +59,7 @@ def execute(command, cwd=None, strip=True):
     In this function, Popen is called with stderr=subprocess.STDOUT, which
     sends all stderr to stdout.
     """
-    if isinstance(command, basestring):
+    if isinstance(command, six.string_types):
         cmd = shlex.split(command)
         LOG.debug("Command after split: %s", cmd)
     elif isinstance(command, list):

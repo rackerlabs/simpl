@@ -25,13 +25,14 @@ Tested against:
 
 import atexit
 import errno
-import itertools
 import logging
 import os
 import pipes
-import tempfile
 import shutil
+import tempfile
 import warnings
+
+from six.moves import zip_longest
 
 from simpl import exceptions
 from simpl.utils import shell
@@ -123,7 +124,6 @@ def git_clone(target_dir, repo_location, branch_or_tag=None, verbose=True):
     If branch_or_tag is not specified, the HEAD of the primary
     branch of the cloned repo is checked out.
     """
-
     target_dir = pipes.quote(target_dir)
     command = ['git', 'clone']
     if verbose:
@@ -211,7 +211,7 @@ def git_list_branches(repo_dir):
     breakout = [k for k in breakout if len(k[1]) == 40]
     headers = ['branch', 'commit', 'message']
     # use izip_longest so we fill in None if message was empty
-    result = [dict(itertools.izip_longest(headers, vals))
+    result = [dict(zip_longest(headers, vals))
               for vals in breakout]
     if item:
         result.append(item)
@@ -228,7 +228,7 @@ def git_list_remotes(repo_dir):
     headers = ['name', 'location', 'cmd']
     breakout = [k.split(None, len(headers)) for k in output]
     # use izip_longest so we fill in None if message was empty
-    return [dict(itertools.izip_longest(headers, vals))
+    return [dict(zip_longest(headers, vals))
             for vals in breakout]
 
 
@@ -569,6 +569,7 @@ class GitRepo(object):
         return git_current_branch(self.repo_dir)
 
     def __repr__(self):
+        """Customize representation."""
         rpr = '<Simpl GitRepo'
         if self.temp:
             rpr += ' (tmp)'
@@ -712,6 +713,7 @@ class GitRepo(object):
 
 
 def _cleanup_tempdir(tempdir):
+    """Clean up temp directory ignoring ENOENT errors."""
     try:
         shutil.rmtree(tempdir)
     except OSError as err:

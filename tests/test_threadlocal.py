@@ -17,8 +17,10 @@
 import random
 import string
 import threading
-import Queue
 import unittest
+
+from six.moves import queue
+from six.moves import xrange
 
 from simpl import threadlocal
 
@@ -52,7 +54,7 @@ class TestThreadLocal(unittest.TestCase):
             current[key] = self.get_some_text()
             container.put(current._get_local_dict())
 
-        local_dicts = Queue.Queue()
+        local_dicts = queue.Queue()
         threads = []
         for _ in xrange(num_threads):
             t = threading.Thread(target=get_tld, args=(local_dicts,))

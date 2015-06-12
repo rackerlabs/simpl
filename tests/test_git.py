@@ -15,7 +15,6 @@
 
 """Tests for git module."""
 
-import imp
 import os
 import tempfile
 import shutil
@@ -370,7 +369,7 @@ class TestGitRepo(TestGitBase):
     def test_commit_automatically_stages(self):
         temp = tempfile.NamedTemporaryFile(
             dir=self.repo.repo_dir, suffix='.simpltest')
-        temp.write("calmer than you are")
+        temp.write("calmer than you are".encode('utf-8'))
         temp.flush()
         msg = "1 file changed"
         output = self.repo.commit(message="dudeism")
@@ -389,7 +388,7 @@ class TestGitRepo(TestGitBase):
 
         temp = tempfile.NamedTemporaryFile(
             dir=self.repo.repo_dir, suffix='.simpltest')
-        temp.file.write("calmer than you are")
+        temp.file.write("calmer than you are".encode('utf-8'))
         self.repo.commit(message="dudeism")
         hash_after = self.repo.head
         self.repo.tag('tag_after_changes')
@@ -404,7 +403,7 @@ class TestGitRepo(TestGitBase):
         self.repo.tag('tag_before_changes')
         temp = tempfile.NamedTemporaryFile(
             dir=self.repo.repo_dir, suffix='.simpltest')
-        temp.file.write("calmer than you are")
+        temp.file.write("calmer than you are".encode('utf-8'))
         self.repo.commit(message="dudeism")
         hash_after = self.repo.head
         self.repo.tag('tag_after_changes')
@@ -455,24 +454,26 @@ class TestGitVersion(unittest.TestCase):
             gitv.side_effect = exceptions.SimplGitCommandError(
                 127, 'git version',
                 output="OSError(2, 'No such file or directory')")
-            with warnings.catch_warnings(record=True) as wrn:
+            with warnings.catch_warnings(record=True) as caught:
                 git.check_git_version()
-                [warning] = wrn
+                self.assertEqual(len(caught), 1)
+                warning = caught[-1]
                 self.assertEqual("Git does not appear to be installed!",
-                                 warning.message.message)
+                                 str(warning.message))
 
     def test_check_git_version_old(self):
         # Check that a warning is raised if the installed git version is older
         # than recommended.
         with mock.patch.object(git, 'git_version') as gitv:
             gitv.return_value = 'git version 1.8.5.6'
-            with warnings.catch_warnings(record=True) as wrn:
+            with warnings.catch_warnings(record=True) as caught:
                 git.check_git_version()
-                [warning] = wrn
+                self.assertEqual(len(caught), 1)
+                warning = caught[-1]
                 self.assertEqual(
                     "Git version 1.8.5.6 found. 1.9 or greater "
                     "is recommended for simpl/git.py",
-                    warning.message.message)
+                    str(warning.message))
 
 
 if __name__ == '__main__':

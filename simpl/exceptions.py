@@ -16,18 +16,20 @@
 
 Warnings can be imported and subsequently disabled by
 calling the disable() classmethod.
+
+TODO(sam): add SimpleConfigException and NoGroupForOption
 """
 
 import warnings
 
-__all__ = [
+__all__ = (
     'GitWarning',
     'SimplException',
     'SimplGitError',
     'SimplGitCommandError',
     'SimplGitNotRepo',
     'SimplCalledProcessError',
-]
+)
 
 
 class GitWarning(RuntimeWarning):
@@ -48,9 +50,6 @@ class SimplException(Exception):
     """Base exception for all exceptions raised by the simpl package."""
 
 
-# TODO(sam): add SimpleConfigException and NoGroupForOption
-
-
 class SimplGitError(SimplException):
 
     """Base class for errors from the git module."""
@@ -61,6 +60,7 @@ class SimplGitCommandError(SimplGitError):
     """Raised when an error occurs while trying a git command."""
 
     def __init__(self, returncode, cmd, output=None, oserror=None):
+        """Customize Exception Constructor."""
         super(SimplGitCommandError, self).__init__()
         self.returncode = returncode
         self.cmd = cmd
@@ -68,11 +68,13 @@ class SimplGitCommandError(SimplGitError):
         self.oserror = oserror
 
     def __str__(self):
+        """Include custom data in string."""
         return ("The command `%s` returned non-zero exit status %d and "
                 "produced the following output: \"%s\""
                 % (self.cmd, self.returncode, self.output))
 
     def __repr__(self):
+        """Include custom data in representation."""
         rpr = ('SimplGitCommandError(%d, `%s`, output="%s"'
                % (self.returncode, self.cmd, self.output))
         if self.oserror:
@@ -95,11 +97,13 @@ class SimplCalledProcessError(SimplException):
     """
 
     def __init__(self, returncode, cmd, output=None):
+        """Customize Exception Constructor."""
         super(SimplCalledProcessError, self).__init__()
         self.returncode = returncode
         self.cmd = cmd
         self.output = output
 
     def __str__(self):
+        """Include custom data in string."""
         return ("Command '%s' returned non-zero exit status %d"
                 % (self.cmd, self.returncode))

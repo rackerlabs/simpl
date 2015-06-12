@@ -18,10 +18,12 @@
 
 import ast
 import re
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from setuptools import setup
 
 
 DEPENDENCIES = [
+    'six',
 ]
 TESTS_REQUIRE = [
     'mock',
@@ -66,8 +68,13 @@ setup(
     maintainer='Sam Stavinoha',
     maintainer_email='samuel.stavinoha@rackspace.com',
     classifiers=[
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Apache Software License',
+        'Operating System :: OS Independent',
+        'Topic :: Software Development',
         "Programming Language :: Python",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.4",
     ],
     license=_simpl_meta['license'],
     url=_simpl_meta['url'],
