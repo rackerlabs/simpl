@@ -20,7 +20,6 @@ Configurable parser that will parse config files, environment variables,
 keyring, and command-line arguments.
 
 
-
 Example test.ini file:
 
     [defaults]
@@ -767,6 +766,43 @@ def comma_separated_pairs(value):
 def parse_key_format(value):
     """Handle string formats of key files."""
     return value.strip("'").replace('\\n', '\n')
+
+SINGLETON = None
+
+
+def init(options=None, ini_paths=None, argv=None):
+    """Initialize singleton config and read/parse configuration.
+
+    :returns: the loaded configuration.
+    """
+    global SINGLETON
+    SINGLETON = Config(
+        options=options,
+        ini_paths=ini_paths,
+        argv=argv)
+    SINGLETON.parse(argv)
+    return SINGLETON
+
+
+def current():
+    """Return initialized, singleton config object.
+
+    Usage:
+
+        from simpl import config
+        CONF = config.current()
+
+    To update the config:
+        CONF.update({'setting': "value"})
+    """
+    if SINGLETON is None:
+        raise RuntimeError(
+            "simpl.config not initialized. An attempt was made to call "
+            "simpl.config.current() but the current config's options have not "
+            "been set yet. Call simpl.config.init() with the configuration "
+            "options first.")
+
+    return SINGLETON
 
 
 def main():
