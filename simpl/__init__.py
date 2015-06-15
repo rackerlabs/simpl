@@ -13,7 +13,7 @@
 # limitations under the License.
 """simpl common utlities library."""
 __title__ = 'simpl'
-__version__ = '0.1.1'
+__version__ = '0.2.1'
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright Rackspace US, Inc. (c) 2015'
 __url__ = 'https://github.com/checkmate/simpl'
