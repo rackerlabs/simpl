@@ -14,68 +14,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""simpl packaging and installation."""
+"""simpl packaging, installation, and package attributes."""
 
-import ast
-import re
+import os
 from setuptools import find_packages
 from setuptools import setup
 
 
-DEPENDENCIES = [
+src_dir = os.path.dirname(os.path.realpath(__file__))
+
+about = {}
+with open(os.path.join(src_dir, 'simpl', '__about__.py')) as abt:
+    exec(abt.read(), about)
+
+
+INSTALL_REQUIRES = [
     'six',
 ]
+
 TESTS_REQUIRE = [
     'mock',
 ]
 
+CLASSIFIERS = [
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: Apache Software License',
+    'Operating System :: OS Independent',
+    'Topic :: Software Development',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.4',
+]
 
-def package_meta():
-    """Read __init__.py for global package metadata.
-
-    Do this without importing the package.
-    """
-    _version_re = re.compile(r'__version__\s+=\s+(.*)')
-    _url_re = re.compile(r'__url__\s+=\s+(.*)')
-    _license_re = re.compile(r'__license__\s+=\s+(.*)')
-
-    with open('simpl/__init__.py', 'rb') as simplinit:
-        initcontent = simplinit.read()
-        version = str(ast.literal_eval(_version_re.search(
-            initcontent.decode('utf-8')).group(1)))
-        url = str(ast.literal_eval(_url_re.search(
-            initcontent.decode('utf-8')).group(1)))
-        licencia = str(ast.literal_eval(_license_re.search(
-            initcontent.decode('utf-8')).group(1)))
-    return {
-        'version': version,
-        'license': licencia,
-        'url': url,
-    }
-
-_simpl_meta = package_meta()
+package_attributes = {
+    'name': about['__title__'],
+    'description': about['__summary__'],
+    'keywords': ' '.join(about['__keywords__']),
+    'version': about['__version__'],
+    'tests_require': TESTS_REQUIRE,
+    'test_suite': 'tests',
+    'install_requires': INSTALL_REQUIRES,
+    'packages': find_packages(exclude=['tests']),
+    'author': about['__author__'],
+    'maintainer_email': about['__email__'],
+    'classifiers': CLASSIFIERS,
+    'license': about['__license__'],
+    'url': about['__url__'],
+}
 
 
-setup(
-    name='simpl',
-    description='Python common libraries',
-    keywords='common reusable amazing',
-    version=_simpl_meta['version'],
-    tests_require=TESTS_REQUIRE,
-    test_suite='tests',
-    install_requires=DEPENDENCIES,
-    packages=find_packages(exclude=['tests']),
-    maintainer='Sam Stavinoha',
-    maintainer_email='samuel.stavinoha@rackspace.com',
-    classifiers=[
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: OS Independent',
-        'Topic :: Software Development',
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.4",
-    ],
-    license=_simpl_meta['license'],
-    url=_simpl_meta['url'],
-)
+setup(**package_attributes)
