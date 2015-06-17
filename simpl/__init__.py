@@ -11,18 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""simpl common utlities library."""
-__title__ = 'simpl'
-__version__ = '0.2.1'
-__license__ = 'Apache 2.0'
-__copyright__ = 'Copyright Rackspace US, Inc. (c) 2015'
-__url__ = 'https://github.com/checkmate/simpl'
+
+"""Simpl."""
 
 import os
 
-from simpl import config  # flake8: noqa
-from simpl import git  # flake8: noqa
-from simpl.exceptions import *
+from simpl import config  # noqa
+from simpl import git  # noqa
+from simpl.exceptions import *  # noqa
+from simpl.__about__ import *  # noqa
 
 
 IS_TRAVIS_CI_ENV = all(map(os.environ.get, ['TRAVIS', 'CI']))
