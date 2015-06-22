@@ -4,6 +4,7 @@ Common Python libraries for:
 
 - [Configuration](#config)
 - [Logging](#logging)
+- [WSGI Middleware](#middleware)
 
 ## <a name="config"></a>Config
 
@@ -18,6 +19,13 @@ configuration methods:
 
 Encapsulates logging boilerplate code to initialize logging using the
 [config](#config) module.
+
+## <a name="middleware"></a>WSGI middleware
+
+Includes sample middleware for use with WSGI apps including bottle.
+
+Middleware included:
+- CORS: handles CORS requests
 
 
 ## release

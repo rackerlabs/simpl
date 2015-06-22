@@ -1,0 +1,4 @@
+# Requirements that are required by optional components
+
+# For simpl.middleware.cors
+WebOb==1.4.1
