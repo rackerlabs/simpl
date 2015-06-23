@@ -41,7 +41,7 @@ class CORSMiddleware(object):  # pylint: disable=R0903
 
     """Responds to CORS requests."""
 
-    default_methods = ('GET', 'OPTIONS', 'POST', 'PUT', 'HEAD')
+    default_methods = ('GET', 'OPTIONS', 'POST', 'PUT', 'HEAD', 'DELETE')
     default_headers = (
         'Accept',
         'Connection',
