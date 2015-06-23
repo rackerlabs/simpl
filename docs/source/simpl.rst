@@ -9,9 +9,6 @@ Subpackages
     simpl.middleware
     simpl.utils
 
-Submodules
-----------
-
 simpl.config module
 -------------------
 
@@ -48,15 +45,6 @@ simpl.threadlocal module
 ------------------------
 
 .. automodule:: simpl.threadlocal
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: simpl
     :members:
     :undoc-members:
     :show-inheritance:

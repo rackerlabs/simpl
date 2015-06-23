@@ -11,10 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   modules.rst
    simpl.rst
-   simpl.middleware.rst
-   simpl.utils.rst
 
 Indices and tables
 ==================
