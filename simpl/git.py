@@ -84,11 +84,13 @@ def check_git_version():
     for this is that before creating a commit, the HEAD refers to a
     refs/heads/master file which doesn't exist yet.
 
-    TODO(larsbutler): If we wanted to be defensive about this and favor
-    compatibility over elegance, we could just automatically add a `git commit`
-    (empty, no message) after every `git init`. I would recommend doing this in
-    the :class:`GitRepo` class, not in the module-level util functions. Adding
-    an extra commit shouldn't cause any problems.
+    .. todo::
+
+        TODO(larsbutler): If we wanted to be defensive about this and favor
+        compatibility over elegance, we could just automatically add a `git commit`
+        (empty, no message) after every `git init`. I would recommend doing this in
+        the :class:`GitRepo` class, not in the module-level util functions. Adding
+        an extra commit shouldn't cause any problems.
     """
     try:
         version = git_version()
@@ -258,7 +260,8 @@ def git_list_refs(repo_dir):
 def git_ls_remote(repo_dir, remote='origin', refs=None):
     """Run git ls-remote.
 
-    :param remote: can be a remote ref in a local repo, e.g. origin, or url of a remote repository.
+    'remote' can be a remote ref in a local repo, e.g. origin,
+    or url of a remote repository.
 
     Return format:
 
