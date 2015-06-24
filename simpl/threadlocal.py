@@ -15,6 +15,8 @@
 
 Usage:
 
+.. code-block::python
+
     import threadlocal
 
     context = threadlocal.default()
