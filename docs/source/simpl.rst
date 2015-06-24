@@ -1,5 +1,5 @@
-simpl package
-=============
+simpl API
+=========
 
 Subpackages
 -----------
