@@ -6,7 +6,7 @@
 Welcome to simpl's documentation!
 =================================
 
-.. image:: ../_static/rainbow.png
+.. image:: rainbow.png
 
 Welcome to the documentation. We'll try to keep things simpl, so just go to :ref:`installation` to get simpl then go to :ref:`quickstart` to see some basic usage and examples.
 
