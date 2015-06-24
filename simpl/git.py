@@ -46,9 +46,9 @@ def execute_git_command(command, repo_dir=None):
     """Execute a git command and return the output.
 
     Catches CalledProcessErrors and OSErrors, wrapping them
-    in a more useful SimplGitCommandError.
+    in a more useful :class:`~simpl.exceptions.SimplGitCommandError`.
 
-    Raises SimplCommandGitError if the command fails. Returncode and
+    Raises :class:`~simpl.exceptions.SimplGitCommandError` if the command fails. Returncode and
     output from the attempt can be found in the SimplGitCommandError
     attributes.
     """
@@ -175,9 +175,10 @@ def git_list_tags(repo_dir, with_messages=False):
 def git_list_branches(repo_dir):
     """Return a list of git branches for the git repo in 'repo_dir'.
 
-    Returns
+    .. code-block:: python
+
         [
-            {'branch': <branchname,
+            {'branch': <branchname>,
              'commit': <commit_hash>,
              'message': <commit message>},
             {...},
@@ -237,7 +238,10 @@ def git_list_refs(repo_dir):
 
     This is similar to ls-remote, but shows the *local* refs.
 
-    Returns
+    Return format:
+
+    .. code-block:: python
+
         {<ref1>: <commit_hash1>,
          <ref2>: <commit_hash2>,
          ...,
@@ -254,10 +258,12 @@ def git_list_refs(repo_dir):
 def git_ls_remote(repo_dir, remote='origin', refs=None):
     """Run git ls-remote.
 
-    'remote' can be a remote ref in a local repo, e.g. origin,
-    or url of a remote repository.
+    :param remote: can be a remote ref in a local repo, e.g. origin, or url of a remote repository.
 
-    Returns
+    Return format:
+
+    .. code-block:: python
+
         {<ref1>: <commit_hash1>,
          <ref2>: <commit_hash2>,
          ...,
