@@ -15,7 +15,7 @@
 
 Usage:
 
-.. code-block::python
+.. code-block:: python
 
     import threadlocal
 
