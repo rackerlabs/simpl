@@ -6,7 +6,8 @@
 Welcome to simpl's documentation!
 =================================
 
-.. image:: rainbow.png
+.. image:: _static/rainbow.png
+   :scale: 40
 
 Welcome to the documentation. We'll try to keep things simpl, so just go to :ref:`installation` to get simpl then go to :ref:`quickstart` to see some basic usage and examples.
 
