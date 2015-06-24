@@ -1,9 +1,7 @@
 Guide
-------------
+-----
 
-This part of the documentation, which is mostly prose, begins with some
-background information about Flask, then focuses on step-by-step
-instructions for web development with Flask.
+Here you can find information on what simpl is, what it can be used for, how to get it, and how to use it. 
 
 .. toctree::
    :maxdepth: 2
