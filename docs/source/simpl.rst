@@ -1,50 +1,52 @@
-simpl package
-=============
+simpl API
+=========
 
-Subpackages
------------
+.. module:: flask
 
-.. toctree::
-
-    simpl.middleware
-    simpl.utils
-
-simpl.config module
--------------------
+Config Module
+-------------
 
 .. automodule:: simpl.config
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-simpl.exceptions module
------------------------
+Exceptions Module
+-----------------
 
 .. automodule:: simpl.exceptions
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-simpl.git module
-----------------
+Git Module
+----------
 
 .. automodule:: simpl.git
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-simpl.log module
-----------------
+Log Module
+----------
 
 .. automodule:: simpl.log
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-simpl.threadlocal module
-------------------------
+Threadlocal Module
+------------------
 
 .. automodule:: simpl.threadlocal
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Utils Module
+------------
+
+.. automodule:: simpl.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:

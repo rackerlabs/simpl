@@ -6,12 +6,12 @@
 Welcome to simpl's documentation!
 =================================
 
-Contents:
+.. image:: _static/prism.jpg
+   :scale: 40
 
-.. toctree::
-   :maxdepth: 4
+Welcome to the documentation. We'll try to keep things simpl, so just go to :ref:`installation` to get simpl then go to :ref:`quickstart` to see some basic usage and examples.
 
-   simpl
+.. include:: contents.rst
 
 Indices and tables
 ==================
