@@ -48,9 +48,9 @@ def execute_git_command(command, repo_dir=None):
     Catches CalledProcessErrors and OSErrors, wrapping them
     in a more useful :class:`~simpl.exceptions.SimplGitCommandError`.
 
-    Raises :class:`~simpl.exceptions.SimplGitCommandError` if the command fails. Returncode and
-    output from the attempt can be found in the SimplGitCommandError
-    attributes.
+    Raises :class:`~simpl.exceptions.SimplGitCommandError` if the command
+    fails. Returncode and output from the attempt can be found in the
+    SimplGitCommandError attributes.
     """
     try:
         output = shell.execute(command, cwd=repo_dir)
@@ -87,10 +87,10 @@ def check_git_version():
     .. todo::
 
         TODO(larsbutler): If we wanted to be defensive about this and favor
-        compatibility over elegance, we could just automatically add a `git commit`
-        (empty, no message) after every `git init`. I would recommend doing this in
-        the :class:`GitRepo` class, not in the module-level util functions. Adding
-        an extra commit shouldn't cause any problems.
+        compatibility over elegance, we could just automatically add a
+        `git commit` (empty, no message) after every `git init`. I would
+        recommend doing this in the :class:`GitRepo` class, not in the
+        module-level util functions. Adding an extra commit shouldn't cause any problems.
     """
     try:
         version = git_version()

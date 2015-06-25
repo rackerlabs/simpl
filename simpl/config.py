@@ -650,8 +650,8 @@ class MetaConfig(Config):
     If you wanted to add --config-file to your basic list of Options in order
     to populate your entire config with values found in the config file, you
     would need to write special logic for handling that particular option.
-    Instead, --config-file can be added to your :class:`MetaConfig`'s options, and
-    any options gathered from the config file will be passed directly to
+    Instead, --config-file can be added to your :class:`MetaConfig`'s options,
+    and any options gathered from the config file will be passed directly to
     your primary :class:`Config` and from there the logic flows as usual.
 
     Out of the box, this class supports --ini, and this class will be
@@ -707,11 +707,11 @@ class MetaConfig(Config):
         $ export MYAPP_JSON_URL=https://gist.com/usr/sha1/raw/myconf.json
         $ ./myapp.py
 
-    which would then parse your environment using :class:`Config`, where (1) would
-    find the command line argument's value for your initialization option
+    which would then parse your environment using :class:`Config`, where (1)
+    would find the command line argument's value for your initialization option
     (aka meta options) and (2) would find the environment variable. Your
-    resulting :class:`Config` instance would be populated by values found in the json
-    file downloaded from the url.
+    resulting :class:`Config` instance would be populated by values found in
+    the json file downloaded from the url.
     """
 
     option_group = 'initialization (metaconfig) arguments'
