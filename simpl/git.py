@@ -90,7 +90,8 @@ def check_git_version():
         compatibility over elegance, we could just automatically add a
         `git commit` (empty, no message) after every `git init`. I would
         recommend doing this in the :class:`GitRepo` class, not in the
-        module-level util functions. Adding an extra commit shouldn't cause any problems.
+        module-level util functions. Adding an extra commit shouldn't cause
+        any problems.
     """
     try:
         version = git_version()
