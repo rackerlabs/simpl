@@ -46,7 +46,7 @@ Threadlocal Module
 Utils Module
 ------------
 
-.. automodule:: simpl.utils
+.. automodule:: simpl.utils.shell
    :members:
    :undoc-members:
    :show-inheritance:

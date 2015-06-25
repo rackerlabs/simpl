@@ -46,11 +46,11 @@ def execute_git_command(command, repo_dir=None):
     """Execute a git command and return the output.
 
     Catches CalledProcessErrors and OSErrors, wrapping them
-    in a more useful SimplGitCommandError.
+    in a more useful :class:`~simpl.exceptions.SimplGitCommandError`.
 
-    Raises SimplCommandGitError if the command fails. Returncode and
-    output from the attempt can be found in the SimplGitCommandError
-    attributes.
+    Raises :class:`~simpl.exceptions.SimplGitCommandError` if the command
+    fails. Returncode and output from the attempt can be found in the
+    SimplGitCommandError attributes.
     """
     try:
         output = shell.execute(command, cwd=repo_dir)
@@ -84,11 +84,14 @@ def check_git_version():
     for this is that before creating a commit, the HEAD refers to a
     refs/heads/master file which doesn't exist yet.
 
-    TODO(larsbutler): If we wanted to be defensive about this and favor
-    compatibility over elegance, we could just automatically add a `git commit`
-    (empty, no message) after every `git init`. I would recommend doing this in
-    the :class:`GitRepo` class, not in the module-level util functions. Adding
-    an extra commit shouldn't cause any problems.
+    .. todo::
+
+        TODO(larsbutler): If we wanted to be defensive about this and favor
+        compatibility over elegance, we could just automatically add a
+        `git commit` (empty, no message) after every `git init`. I would
+        recommend doing this in the :class:`GitRepo` class, not in the
+        module-level util functions. Adding an extra commit shouldn't cause
+        any problems.
     """
     try:
         version = git_version()
@@ -175,9 +178,10 @@ def git_list_tags(repo_dir, with_messages=False):
 def git_list_branches(repo_dir):
     """Return a list of git branches for the git repo in 'repo_dir'.
 
-    Returns
+    .. code-block:: python
+
         [
-            {'branch': <branchname,
+            {'branch': <branchname>,
              'commit': <commit_hash>,
              'message': <commit message>},
             {...},
@@ -237,7 +241,10 @@ def git_list_refs(repo_dir):
 
     This is similar to ls-remote, but shows the *local* refs.
 
-    Returns
+    Return format:
+
+    .. code-block:: python
+
         {<ref1>: <commit_hash1>,
          <ref2>: <commit_hash2>,
          ...,
@@ -257,7 +264,10 @@ def git_ls_remote(repo_dir, remote='origin', refs=None):
     'remote' can be a remote ref in a local repo, e.g. origin,
     or url of a remote repository.
 
-    Returns
+    Return format:
+
+    .. code-block:: python
+
         {<ref1>: <commit_hash1>,
          <ref2>: <commit_hash2>,
          ...,

@@ -22,6 +22,8 @@ keyring, and command-line arguments.
 
 Example test.ini file:
 
+.. code-block:: python
+
     [defaults]
     gini=10
 
@@ -30,9 +32,13 @@ Example test.ini file:
 
 Example test.arg file:
 
+.. code-block:: python
+
     --xfarg=30
 
 Example test.py file:
+
+.. code-block:: python
 
     import os
     import sys
@@ -123,6 +129,8 @@ Example test.py file:
 
 Example results:
 
+.. code-block:: bash
+
     $APP_XENV=10 python test.py api --xarg=2 @test.arg
     <Config xpos=api, gini=1, xenv=10, xini=50, karg=13, xarg=2, xfarg=30>
     xpos:   command-line
@@ -136,6 +144,8 @@ Another common pattern is to support supplying a key as a file or string value.
 That can be accomplished with mutually exclusive keys (a standard feature of
 argparser), the `dest` parameter (also a standard argparse feature), and the
 `read_from` type.
+
+.. code-block:: python
 
     contrib.config.Option(
         '--my-pkey',
@@ -640,14 +650,16 @@ class MetaConfig(Config):
     If you wanted to add --config-file to your basic list of Options in order
     to populate your entire config with values found in the config file, you
     would need to write special logic for handling that particular option.
-    Instead, --config-file can be added to your MetaConfig's options, and
-    any options gathered from the config file will be passed directly to
-    your primary Config and from there the logic flows as usual.
+    Instead, --config-file can be added to your :class:`MetaConfig`'s options,
+    and any options gathered from the config file will be passed directly to
+    your primary :class:`Config` and from there the logic flows as usual.
 
     Out of the box, this class supports --ini, and this class will be
-    defined as the default MetaConfig class for Config.
+    defined as the default :class:`MetaConfig` class for :class:`Config`.
 
     Example using --ini
+
+    .. code-block:: python
 
         # myapp-dev.ini
         [myapp]
@@ -680,20 +692,26 @@ class MetaConfig(Config):
     which downloads a json file full of values for your Options. Then,
     when running your app which leverages simpl/config, you would run:
 
-        (1)
+    (1)
+
+    .. code-block:: bash
+
         $ ./myapp.py --json-url https://gist.com/usr/sha1/raw/myconf.json
 
-        OR
+    OR
 
-        (2)
+    (2)
+
+    .. code-block:: bash
+
         $ export MYAPP_JSON_URL=https://gist.com/usr/sha1/raw/myconf.json
         $ ./myapp.py
 
-    which would then parse your environment using Config, where (1) would
-    find the command line argument's value for your initialization option
+    which would then parse your environment using :class:`Config`, where (1)
+    would find the command line argument's value for your initialization option
     (aka meta options) and (2) would find the environment variable. Your
-    resulting Config instance would be populated by values found in the json
-    file downloaded from the url.
+    resulting :class:`Config` instance would be populated by values found in
+    the json file downloaded from the url.
     """
 
     option_group = 'initialization (metaconfig) arguments'
@@ -789,10 +807,15 @@ def current():
 
     Usage:
 
+    .. code-block:: python
+
         from simpl import config
         CONF = config.current()
 
     To update the config:
+
+    .. code-block:: python
+
         CONF.update({'setting': "value"})
     """
     if SINGLETON is None:

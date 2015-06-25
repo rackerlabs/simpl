@@ -17,13 +17,15 @@
 Named `log` so as not to conflict with stdlib logging.
 
 Implements:
-- integration with :mod:`config` for configuring logging.
+- integration with :py:mod:`config` for configuring logging.
 - enhanced handling of extra data and output formatting.
 
 
 Usage with config:
 
 - initialization
+
+.. code-block:: python
 
     from simpl import config
     from simpl import log
@@ -32,6 +34,8 @@ Usage with config:
 
 
 Usage in module:
+
+.. code-block:: python
 
     from simpl import log  # instead of `import logging`
 
