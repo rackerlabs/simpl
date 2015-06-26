@@ -283,15 +283,27 @@ class TestGitRepo(TestGitBase):
 
     def test_list_branches_detached_head_state(self):
         tf1 = tempfile.NamedTemporaryFile(dir=self.repo.repo_dir)
-        out = self.repo.run_command(
+        out1 = self.repo.run_command(
             ['git', 'stash', 'save', '-u', 'stash message'])
-        self.repo.checkout('stash@{0}')
+        out2 = self.repo.checkout('stash@{0}')
         branches = self.repo.list_branches()
-        self.assertIn({
-            'commit': self.repo.head,
-            'message': 'On master: stash message',
-            'branch': '(detached from %s)' % self.repo.head[:7]
-        }, branches)
+        for b in branches:
+            if b['commit'] == self.repo.head:
+                selected = b
+                break
+        else:
+            self.fail("Could not find branch with current commit.")
+        self.assertEqual(selected['commit'], self.repo.head)
+        self.assertEqual(selected['message'], 'On master: stash message')
+        try:
+            fmtr = {'cmt': self.repo.head[:7]}
+            # all but very new versions of git use this message
+            self.assertEqual(
+                selected['branch'], '(detached from {cmt})'.format(**fmtr))
+        except AssertionError as e:
+            # newer versions of git use this message
+            self.assertEqual(
+                selected['branch'], '(HEAD detached at {cmt})'.format(**fmtr))
 
     def test_list_remotes(self):
 
