@@ -165,9 +165,12 @@ from __future__ import print_function
 import argparse
 import collections
 import copy
+import errno
 import logging
 import os
 import sys
+
+import simpl.exceptions
 
 try:
     import keyring
@@ -526,7 +529,7 @@ class Config(collections.MutableMapping):
         parsed, _ = parser.parse_known_args([])
         return vars(parsed)
 
-    def parse_ini(self, paths=None, namespace=None):
+    def parse_ini(self, paths=None, namespace=None, permissive=False):
         """Parse config files and return configuration options.
 
         Expects array of files that are in ini format.
@@ -544,7 +547,24 @@ class Config(collections.MutableMapping):
 
         parser_errors = (configparser.NoOptionError,
                          configparser.NoSectionError)
-        self.ini_config.read(paths or reversed(self._ini_paths))
+
+        inipaths = list(paths or reversed(self._ini_paths))
+        # check that explicitly defined ini paths exist
+        for pth in inipaths:
+            if not os.path.isfile(pth):
+                inipaths.remove(pth)
+                if pth == self.default_ini:
+                    continue
+                raise OSError(errno.ENOENT, 'No such file or directory', pth)
+
+        read_ok = self.ini_config.read(inipaths)
+        assert read_ok == inipaths
+        dicts = (list(self.ini_config._sections.values()) +
+                 [self.ini_config.defaults()])
+        ini_options = {k for d in dicts for k in d.keys() if k != '__name__'}
+        if not ini_options:
+            return results
+
         for option in self._options:
             ini_section = option.kwargs.get('ini_section')
             value = None
@@ -565,6 +585,13 @@ class Config(collections.MutableMapping):
                 except parser_errors as err:
                     LOG.debug('Error parsing ini file: %r -- Continuing.',
                               err)
+            if option.dest in results:
+                ini_options.remove(option.dest)
+        if ini_options and not permissive:
+            raise simpl.exceptions.SimplConfigUnknownOption(
+                'No corresponding Option was found for the following '
+                'values in the ini file: %s'
+                % ', '.join(["'%s'" % o for o in ini_options]))
         return results
 
     def parse_keyring(self, namespace=None):
