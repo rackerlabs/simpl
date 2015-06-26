@@ -336,36 +336,6 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(myconf.ham, 'glam')
         self.assertEqual(myconf.spam, 'rico')
 
-    def test_default_metaconfig_ini(self):
-        """A default ini file is looked for by the metaconfig.
-
-        Looks for '{cwd}/{prog}.ini' % (os.getcwd(), myconf.prog)
-        """
-        strfile = self.get_tempfile(dir=os.getcwd(), suffix='.ini')
-        prog = os.path.split(strfile.name)[-1].rsplit('.ini', 1)[0]
-        metaconf = textwrap.dedent(
-            """
-            [%s]
-            ham = glam
-            grand = slam
-            spam = rico
-            """
-        ) % prog
-        opts = [
-            config.Option('--ham'),
-            config.Option('--grand'),
-            config.Option('--spam'),
-        ]
-        strfile.write(metaconf.encode('utf-8'))
-        strfile.flush()
-        argv = ['program', '--ini', strfile.name]
-        myconf = config.Config(options=opts, argv=argv)
-        myconf.prog = prog
-        myconf.parse()
-        self.assertEqual(myconf.grand, 'slam')
-        self.assertEqual(myconf.ham, 'glam')
-        self.assertEqual(myconf.spam, 'rico')
-
     def test_metaconfig_ini_nooption_raises(self):
         """Test that ini options with no matches raises an error."""
         metaconf = textwrap.dedent(
