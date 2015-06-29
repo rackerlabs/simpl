@@ -5,6 +5,7 @@ Common Python libraries for:
 - [Configuration](#config)
 - [Logging](#logging)
 - [Secrets](#secrets)
+- [Python Utilites](#python)
 - [WSGI Middleware](#middleware)
 - [REST API Tooling](#rest)
 
@@ -25,6 +26,13 @@ Encapsulates logging boilerplate code to initialize logging using the
 ## <a name="secrets"></a>Sensitive Value Helpers
 
 Helpers for managing sensitive values.
+
+
+## <a name="python"></a>Python Utilities
+
+Code we wished was built in to python (or was simpler to use):
+- dictionary and list merging
+- dictionary get/set/in by path
 
 ## <a name="middleware"></a>WSGI middleware
 
