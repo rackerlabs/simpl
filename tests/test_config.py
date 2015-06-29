@@ -63,8 +63,8 @@ class TestConfig(unittest.TestCase):
             config.Option('--none'),
         ])
         cfg.parse([])
-        self.assertEquals(cfg.one, 1)
-        self.assertEquals(cfg.a, 'a')
+        self.assertEqual(cfg.one, 1)
+        self.assertEqual(cfg.a, 'a')
         self.assertIsNone(cfg.none)
 
     def test_items(self):
@@ -73,8 +73,8 @@ class TestConfig(unittest.TestCase):
             config.Option('--none'),
         ])
         cfg.parse([])
-        self.assertEquals(cfg.one, cfg['one'])
-        self.assertEquals(cfg['one'], 1)
+        self.assertEqual(cfg.one, cfg['one'])
+        self.assertEqual(cfg['one'], 1)
         self.assertIsNone(cfg['none'])
 
     @mock.patch.dict('os.environ', {'TEST_TWO': '2'})
@@ -85,8 +85,8 @@ class TestConfig(unittest.TestCase):
             config.Option('--two', required=True, env='TEST_TWO'),
         ])
         cfg.parse([])
-        self.assertEquals(cfg.one, 1)
-        self.assertEquals(cfg.two, '2')
+        self.assertEqual(cfg.one, 1)
+        self.assertEqual(cfg.two, '2')
 
     def test_required_negative(self):
         cfg = config.Config(options=[
