@@ -4,6 +4,7 @@ Common Python libraries for:
 
 - [Configuration](#config)
 - [Logging](#logging)
+- [Secrets](#secrets)
 - [WSGI Middleware](#middleware)
 
 ## <a name="config"></a>Config
@@ -19,6 +20,10 @@ configuration methods:
 
 Encapsulates logging boilerplate code to initialize logging using the
 [config](#config) module.
+
+## <a name="secrets"></a>Sensitive Value Helpers
+
+Helpers for managing sensitive values.
 
 ## <a name="middleware"></a>WSGI middleware
 
