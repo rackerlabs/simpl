@@ -46,7 +46,6 @@ class TestParsers(unittest.TestCase):
 class TestConfig(unittest.TestCase):
 
     def get_tempfile(self, *args, **kwargs):
-
         fp = tempfile.NamedTemporaryFile(*args, **kwargs)
         self.addCleanup(fp.close)
         return fp
@@ -96,7 +95,6 @@ class TestConfig(unittest.TestCase):
             cfg.parse([])
 
     def test_argparser_groups(self):
-
         opts = [
             config.Option('--baz'),
             config.Option('--password', group='secret'),
@@ -139,7 +137,6 @@ class TestConfig(unittest.TestCase):
         self.assertIn('--who', option_strings)
 
     def test_group_help_usage_output(self):
-
         opts = [
             config.Option('--baz'),
             config.Option('--password', group='secret'),
@@ -255,7 +252,6 @@ class TestConfig(unittest.TestCase):
 
     @mock.patch.object(sys, 'stderr')
     def test_mutually_exclusive_fails_excess(self, mock_stderr):
-
         opts = [
             config.Option('--foo'),
             # if *any* arg in the same mutually_exclusive group says
@@ -301,7 +297,6 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(myconf.more, False)
 
     def test_default_metaconfig_options(self):
-
         myconf = config.Config()
         metaconf = myconf._get_metaconfig_class()
         self.assertEqual(metaconf, config.MetaConfig)
@@ -309,7 +304,6 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(metaconf.options[0].args, ('--ini',))
 
     def test_metaconfig_ini(self):
-
         metaconf = textwrap.dedent(
             """
             [default]
