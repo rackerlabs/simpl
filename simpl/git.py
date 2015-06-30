@@ -28,6 +28,7 @@ import errno
 import logging
 import os
 import pipes
+import re
 import shutil
 import tempfile
 import warnings
@@ -201,7 +202,7 @@ def git_list_branches(repo_dir):
     if current_branch:
         lines.remove(current_branch)
         current_branch = current_branch.replace('* ', '', 1)
-        if current_branch.startswith('(detached from '):
+        if re.match('\(.*detached.+\)', current_branch):
             branch, rest = current_branch.split(')', 1)
             branch = "%s)" % branch
             sha, msg = rest.split(None, 1)

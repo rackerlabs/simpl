@@ -165,9 +165,12 @@ from __future__ import print_function
 import argparse
 import collections
 import copy
+import errno
 import logging
 import os
 import sys
+
+import simpl.exceptions
 
 try:
     import keyring
@@ -356,6 +359,7 @@ class Config(collections.MutableMapping):
         """
         self._parser_kwargs = parser_kwargs or {}
         self._ini_paths = ini_paths or []
+        self._ini_paths = [normalized_path(x) for x in self._ini_paths]
         self._options = copy.copy(options) or []
         self._values = {option.name: option.default
                         for option in self._options}
@@ -384,11 +388,6 @@ class Config(collections.MutableMapping):
     def prog(self, value):
         """Set program name."""
         self._prog = value
-
-    @property
-    def default_ini(self):
-        """Default ini file name."""
-        return '%s.ini' % self.prog
 
     def _metaconfigure(self, argv=None):
         """Initialize metaconfig for provisioning self."""
@@ -526,7 +525,7 @@ class Config(collections.MutableMapping):
         parsed, _ = parser.parse_known_args([])
         return vars(parsed)
 
-    def parse_ini(self, paths=None, namespace=None):
+    def parse_ini(self, paths=None, namespace=None, permissive=False):
         """Parse config files and return configuration options.
 
         Expects array of files that are in ini format.
@@ -538,13 +537,23 @@ class Config(collections.MutableMapping):
         results = {}
         self.ini_config = configparser.SafeConfigParser()
 
-        if os.path.isfile(self.default_ini) and (
-                self.default_ini not in self._ini_paths):
-            self._ini_paths.append(self.default_ini)
-
         parser_errors = (configparser.NoOptionError,
                          configparser.NoSectionError)
-        self.ini_config.read(paths or reversed(self._ini_paths))
+
+        inipaths = list(paths or reversed(self._ini_paths))
+        # check that explicitly defined ini paths exist
+        for pth in inipaths:
+            if not os.path.isfile(pth):
+                raise OSError(errno.ENOENT, 'No such file or directory', pth)
+
+        read_ok = self.ini_config.read(inipaths)
+        assert read_ok == inipaths
+        dicts = (list(self.ini_config._sections.values()) +
+                 [self.ini_config.defaults()])
+        ini_options = {k for d in dicts for k in d.keys() if k != '__name__'}
+        if not ini_options:
+            return results
+
         for option in self._options:
             ini_section = option.kwargs.get('ini_section')
             value = None
@@ -565,6 +574,13 @@ class Config(collections.MutableMapping):
                 except parser_errors as err:
                     LOG.debug('Error parsing ini file: %r -- Continuing.',
                               err)
+            if option.dest in results:
+                ini_options.remove(option.dest)
+        if ini_options and not permissive:
+            raise simpl.exceptions.SimplConfigUnknownOption(
+                'No corresponding Option was found for the following '
+                'values in the ini file: %s'
+                % ', '.join(["'%s'" % o for o in ini_options]))
         return results
 
     def parse_keyring(self, namespace=None):
@@ -637,6 +653,15 @@ class Config(collections.MutableMapping):
         """Display configured values when representing instance."""
         return "<Config %s>" % ', '.join([
             '%s=%s' % (k, v) for k, v in self.items()])
+
+
+def normalized_path(value):
+    """Normalize and expand a shorthand or relative path."""
+    if not value:
+        return
+    norm = os.path.normpath(value)
+    norm = os.path.abspath(os.path.expanduser(norm))
+    return norm
 
 
 class MetaConfig(Config):
@@ -720,10 +745,8 @@ class MetaConfig(Config):
 
     options = [
         Option('--ini', metavar='PATH',
-               help=('Source some or all of the options from this ini file. '
-                     'Defaults to <program_name>.ini in your '
-                     'current working directory.'),
-               default='%s.ini' % sys.argv[0],
+               help=('Source some or all of the options from this ini file.'),
+               type=normalized_path,
                group=option_group, group_description=option_description),
     ]
 
@@ -755,15 +778,6 @@ def read_from(value):
     with open(path, 'r') as reader:
         read = reader.read()
     return read
-
-
-def normalized_path(value):
-    """Normalize and expand a shorthand or relative path."""
-    if not value:
-        return
-    norm = os.path.normpath(value)
-    norm = os.path.abspath(os.path.expanduser(norm))
-    return norm
 
 
 def comma_separated_strings(value):

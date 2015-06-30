@@ -17,7 +17,7 @@
 Warnings can be imported and subsequently disabled by
 calling the disable() classmethod.
 
-TODO(sam): add SimpleConfigException and NoGroupForOption
+TODO(sam): NoGroupForOption
 """
 
 import warnings
@@ -107,3 +107,17 @@ class SimplCalledProcessError(SimplException):
         """Include custom data in string."""
         return ("Command '%s' returned non-zero exit status %d"
                 % (self.cmd, self.returncode))
+
+
+class SimplConfigException(SimplException):
+
+    """Errors raised by simpl/config."""
+
+
+class SimplConfigUnknownOption(SimplConfigException):
+
+    """An option defined in the specified source has no match.
+
+    For example, a specified ini file has an option with no corresponding
+    config.Option.
+    """

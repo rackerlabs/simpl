@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for config.py"""
+"""Tests for simpl.config."""
 from __future__ import print_function
 
+import errno
 import os
 import sys
 import tempfile
@@ -27,6 +28,7 @@ import mock
 import six
 
 from simpl import config
+from simpl import exceptions as simpl_exceptions
 
 
 class TestParsers(unittest.TestCase):
@@ -42,6 +44,12 @@ class TestParsers(unittest.TestCase):
 
 
 class TestConfig(unittest.TestCase):
+
+    def get_tempfile(self, *args, **kwargs):
+        fp = tempfile.NamedTemporaryFile(*args, **kwargs)
+        self.addCleanup(fp.close)
+        return fp
+
     def test_instantiation(self):
         empty = config.Config(options=[])
         self.assertIsInstance(empty, config.Config)
@@ -54,8 +62,8 @@ class TestConfig(unittest.TestCase):
             config.Option('--none'),
         ])
         cfg.parse([])
-        self.assertEquals(cfg.one, 1)
-        self.assertEquals(cfg.a, 'a')
+        self.assertEqual(cfg.one, 1)
+        self.assertEqual(cfg.a, 'a')
         self.assertIsNone(cfg.none)
 
     def test_items(self):
@@ -64,8 +72,8 @@ class TestConfig(unittest.TestCase):
             config.Option('--none'),
         ])
         cfg.parse([])
-        self.assertEquals(cfg.one, cfg['one'])
-        self.assertEquals(cfg['one'], 1)
+        self.assertEqual(cfg.one, cfg['one'])
+        self.assertEqual(cfg['one'], 1)
         self.assertIsNone(cfg['none'])
 
     @mock.patch.dict('os.environ', {'TEST_TWO': '2'})
@@ -76,8 +84,8 @@ class TestConfig(unittest.TestCase):
             config.Option('--two', required=True, env='TEST_TWO'),
         ])
         cfg.parse([])
-        self.assertEquals(cfg.one, 1)
-        self.assertEquals(cfg.two, '2')
+        self.assertEqual(cfg.one, 1)
+        self.assertEqual(cfg.two, '2')
 
     def test_required_negative(self):
         cfg = config.Config(options=[
@@ -87,7 +95,6 @@ class TestConfig(unittest.TestCase):
             cfg.parse([])
 
     def test_argparser_groups(self):
-
         opts = [
             config.Option('--baz'),
             config.Option('--password', group='secret'),
@@ -130,13 +137,14 @@ class TestConfig(unittest.TestCase):
         self.assertIn('--who', option_strings)
 
     def test_group_help_usage_output(self):
-
         opts = [
             config.Option('--baz'),
             config.Option('--password', group='secret'),
-            config.Option('--key', group='secret', group_description='haha security'),
+            config.Option('--key', group='secret',
+                          group_description='haha security'),
             config.Option('--this', group='things'),
-            config.Option('--that', group='things', group_description='define me once'),
+            config.Option('--that', group='things',
+                          group_description='define me once'),
             config.Option('--other', group='things'),
             config.Option('--who', group='group of its own'),
         ]
@@ -161,7 +169,7 @@ class TestConfig(unittest.TestCase):
 
         # for read_from
         keystring = 'this-is-a-private-key'
-        strfile = tempfile.NamedTemporaryFile()
+        strfile = self.get_tempfile()
         strfile.write(('%s-written-to-file' % keystring).encode('utf-8'))
         strfile.flush()
 
@@ -172,7 +180,7 @@ class TestConfig(unittest.TestCase):
         with self.assertRaises(SystemExit):
             try:
                 myconf.parse(argv=argv)  # fails b/c mutual exclusion collision
-            except SystemExit as err:
+            except SystemExit:
                 errmsg = ('error: argument --key: '
                           'not allowed with argument --key-file')
                 args, _ = mock_stderr.write.call_args
@@ -195,7 +203,7 @@ class TestConfig(unittest.TestCase):
 
         # for read_from
         keystring = 'this-is-a-private-key'
-        strfile = tempfile.NamedTemporaryFile()
+        strfile = self.get_tempfile()
         strfile.write(('%s-written-to-file' % keystring).encode('utf-8'))
         strfile.flush()
 
@@ -235,7 +243,7 @@ class TestConfig(unittest.TestCase):
         with self.assertRaises(SystemExit):
             try:
                 myconf.parse(argv=argv)  # fails b/c mutual exclusion collision
-            except SystemExit as err:
+            except SystemExit:
                 errmsg = ('error: one of the '
                           'arguments --more --less is required')
                 args, _ = mock_stderr.write.call_args
@@ -244,7 +252,6 @@ class TestConfig(unittest.TestCase):
 
     @mock.patch.object(sys, 'stderr')
     def test_mutually_exclusive_fails_excess(self, mock_stderr):
-
         opts = [
             config.Option('--foo'),
             # if *any* arg in the same mutually_exclusive group says
@@ -260,7 +267,7 @@ class TestConfig(unittest.TestCase):
         with self.assertRaises(SystemExit):
             try:
                 myconf.parse(argv=argv)  # fails b/c mutual exclusion collision
-            except SystemExit as err:
+            except SystemExit:
                 errmsg = ('error: argument --less: '
                           'not allowed with argument --more')
                 args, _ = mock_stderr.write.call_args
@@ -290,7 +297,6 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(myconf.more, False)
 
     def test_default_metaconfig_options(self):
-
         myconf = config.Config()
         metaconf = myconf._get_metaconfig_class()
         self.assertEqual(metaconf, config.MetaConfig)
@@ -298,7 +304,6 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(metaconf.options[0].args, ('--ini',))
 
     def test_metaconfig_ini(self):
-
         metaconf = textwrap.dedent(
             """
             [default]
@@ -315,7 +320,7 @@ class TestConfig(unittest.TestCase):
             config.Option('--grand', ini_section='default'),
             config.Option('--spam'),
         ]
-        strfile = tempfile.NamedTemporaryFile()
+        strfile = self.get_tempfile()
         strfile.write(metaconf.encode('utf-8'))
         strfile.flush()
         argv = ['program', '--ini', strfile.name]
@@ -325,36 +330,52 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(myconf.ham, 'glam')
         self.assertEqual(myconf.spam, 'rico')
 
-    def test_default_metaconfig_ini(self):
-        """A default ini file is looked for by the metaconfig.
-
-        Looks for '{cwd}/{prog}.ini' % (os.getcwd(), myconf.prog)
-        """
-        strfile = tempfile.NamedTemporaryFile(dir=os.getcwd(), suffix='.ini')
-        prog = os.path.split(strfile.name)[-1].rsplit('.ini', 1)[0]
+    def test_metaconfig_ini_nooption_raises(self):
+        """Test that ini options with no matches raises an error."""
         metaconf = textwrap.dedent(
             """
-            [%s]
+            [default]
             ham = glam
             grand = slam
+            notanoption = toobad
+
+            [program]
             spam = rico
+            grand = notpreferred
             """
-        ) % prog
+        )
         opts = [
-            config.Option('--ham'),
-            config.Option('--grand'),
+            config.Option('--ham', ini_section='default'),
+            config.Option('--grand', ini_section='default'),
             config.Option('--spam'),
         ]
+        strfile = self.get_tempfile()
         strfile.write(metaconf.encode('utf-8'))
         strfile.flush()
         argv = ['program', '--ini', strfile.name]
-        myconf = config.Config(options=opts, argv=argv)
-        myconf.prog = prog
-        myconf.parse()
-        self.assertEqual(myconf.grand, 'slam')
-        self.assertEqual(myconf.ham, 'glam')
-        self.assertEqual(myconf.spam, 'rico')
+        myconf = config.Config(options=opts, argv=argv, prog='program')
+        expected_error = simpl_exceptions.SimplConfigUnknownOption
+        expected_message = ("No corresponding Option was found for the "
+                            "following values in the ini file: 'notanoption'")
+        with self.assertRaises(expected_error) as err:
+            myconf.parse()
+        self.assertIn(expected_message, str(err.exception))
 
+    def test_metaconfig_ini_nofile_raises(self):
+        """Test that ini options with no matches raises an error."""
+        opts = [
+            config.Option('--ham', ini_section='default'),
+            config.Option('--grand', ini_section='default'),
+            config.Option('--spam'),
+        ]
+        nofile = '/i/dont/exist'
+        argv = ['program', '--ini', nofile]
+        myconf = config.Config(options=opts, argv=argv, prog='program')
+        expected_message = "No such file or directory: '%s'" % nofile
+        with self.assertRaises(OSError) as err:
+            myconf.parse()
+        self.assertEqual(errno.ENOENT, err.exception.errno)
+        self.assertIn(expected_message, str(err.exception))
 
 if __name__ == '__main__':
     unittest.main()
