@@ -1,4 +1,7 @@
 # Requirements that are required by optional components
 
+# For simpl.rest
+bottle==0.12.8
+
 # For simpl.middleware.cors
 WebOb==1.4.1
