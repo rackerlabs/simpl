@@ -17,7 +17,6 @@
 import os
 
 from simpl import config  # noqa
-from simpl import git  # noqa
 from simpl.exceptions import *  # noqa
 from simpl.__about__ import *  # noqa
 
