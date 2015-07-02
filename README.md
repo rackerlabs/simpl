@@ -40,7 +40,7 @@ Helper code for handling RESTful APIs using bottle.
 
 Code included:
 - body: a decorator that parses a call body and passes it to a route as an argument. The decorator can apply a schema (any callable including a voluptuous.Schema), return a default, and enforce that a body is required.
-
+- paginated: a decorator that returns paginated data with correct limit/offset validation and HTTP responses.
 
 
 ## release
