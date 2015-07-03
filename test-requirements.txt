@@ -6,4 +6,5 @@ flake8_docstrings
 mock
 nose
 nose-ignore-docstring
+requests
 webtest
