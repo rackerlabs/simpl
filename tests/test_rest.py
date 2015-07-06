@@ -238,5 +238,71 @@ class TestRangeResponse(unittest.TestCase):
         self.assertIsNone(decorated(limit='invalid'))
         mock_handler.assert_not_called()
 
+
+class TestProcessParams(unittest.TestCase):
+
+    """Tests for :func:`simpl.rest.process_prams`."""
+
+    def test_filters(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': 'status=A&status=B,C&other=2'
+        })
+        expected = {'status': ['A', 'B', 'C'], 'other': '2'}
+        results = rest.process_params(request,
+                                      filter_fields=['status', 'other'])
+        self.assertEqual(results, expected)
+
+    def test_sort(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': 'sort=up&sort=-down'
+        })
+        expected = {'sort': ['up', '-down']}
+        self.assertEqual(rest.process_params(request), expected)
+
+    def test_standard(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': 'limit=100&offset=0&q=txt&facets=status'
+        })
+        results = rest.process_params(request)
+        self.assertEqual(results, {})
+
+    def test_invalid(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': 'foo=bar'
+        })
+        with self.assertRaises(bottle.HTTPError):
+            rest.process_params(request)
+
+    def test_blank(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': ''
+        })
+        results = rest.process_params(request)
+        self.assertEqual(results, {})
+
+    def test_single(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': 'foo'
+        })
+        with self.assertRaises(bottle.HTTPError):
+            rest.process_params(request)
+
+    def test_strange(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': ',,\n??&&'
+        })
+        with self.assertRaises(bottle.HTTPError):
+            rest.process_params(request)
+
+    def test_dfaults(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': 'status=INACTIVE'
+        })
+        defaults = {'status': 'ACTIVE', 'size': 1}
+        results = rest.process_params(request, filter_fields=defaults.keys(),
+                                      defaults=defaults)
+        self.assertEqual(results, {'status': 'INACTIVE', 'size': 1})
+
+
 if __name__ == '__main__':
     unittest.main()

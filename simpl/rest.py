@@ -15,10 +15,12 @@
 """REST-ful API Utilites."""
 
 import functools
+import itertools
 
 import bottle
 
 MAX_PAGE_SIZE = 10000000
+STANDARD_QUERY_PARAMS = ('offset', 'limit', 'sort', 'q', 'facets')
 
 
 def body(schema=None, types=None, required=False, default=None):
@@ -228,3 +230,50 @@ def write_pagination_headers(data, offset, limit, response, uripath,
                 last_offset = total - limit
             response.add_header(
                 "Link", lastfmt % (uripath, last_offset))
+
+
+def process_params(request, standard_params=STANDARD_QUERY_PARAMS,
+                   filter_fields=None, defaults=None):
+    """Parse query params.
+
+    Parses, validates, and converts query into a consistent format.
+
+    :keyword request: the bottle request
+    :keyword standard_params: query params that are present in most of our
+        (opinionated) APIs (ex. limit, offset, sort, q, and facets)
+    :keyword filter_fields: list of field names to allow filtering on
+    :keyword defaults: dict of params and their default values
+    :retuns: dict of query params with supplied values (string or list)
+    """
+    if not filter_fields:
+        filter_fields = []
+    unfilterable = (set(request.query.keys()) - set(filter_fields) -
+                    set(standard_params))
+    if unfilterable:
+        bottle.abort(400,
+                     "The following query params were invalid: %s. "
+                     "Try one (or more) of %s." %
+                     (", ".join(unfilterable),
+                      ", ".join(filter_fields)))
+    query_fields = defaults or {}
+    for key in request.query:
+        if key in filter_fields:
+            # turns ?netloc=this.com&netloc=that.com,what.net into
+            # {'netloc': ['this.com', 'that.com', 'what.net']}
+            matches = request.query.getall(key)
+            matches = list(itertools.chain(*(k.split(',') for k in matches)))
+            if len(matches) > 1:
+                query_fields[key] = matches
+            else:
+                query_fields[key] = matches[0]
+    if 'sort' in request.query:
+        sort = request.query.getall('sort')
+        sort = list(itertools.chain(*(
+            comma_separated_strings(str(k)) for k in sort)))
+        query_fields['sort'] = sort
+    return query_fields
+
+
+def comma_separated_strings(value):
+    """Parse comma-separated string into list."""
+    return [str(k).strip() for k in value.split(",")]
