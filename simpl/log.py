@@ -80,9 +80,12 @@ def log_level(conf):
 
     --debug: turn on additional debug code/inspection (implies
              logging.DEBUG)
+
     --verbose: turn up logging output (logging.DEBUG)
+
     --quiet: turn down logging output (logging.WARNING)
-    default is logging.INFO
+
+    Default is logging.INFO
     """
     if conf.debug is True:
         return logging.DEBUG
