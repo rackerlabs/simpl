@@ -296,4 +296,8 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
 
-
+nitpick_ignore = [
+    ('py:class', '_abcoll.MutableMapping'),
+    ('py:class', 'exceptions.Exception'),
+    ('py:class', 'exceptions.RuntimeWarning'),
+]
