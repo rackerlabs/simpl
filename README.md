@@ -5,6 +5,7 @@ Common Python libraries for:
 - [Configuration](#config)
 - [Logging](#logging)
 - [Secrets](#secrets)
+- [Python Utilites](#python)
 - [WSGI Middleware](#middleware)
 - [REST API Tooling](#rest)
 
@@ -26,6 +27,13 @@ Encapsulates logging boilerplate code to initialize logging using the
 
 Helpers for managing sensitive values.
 
+
+## <a name="python"></a>Python Utilities
+
+Code we wished was built in to python (or was simpler to use):
+- dictionary and list merging
+- dictionary get/set/in by path
+
 ## <a name="middleware"></a>WSGI middleware
 
 Includes sample middleware for use with WSGI apps including bottle.
@@ -40,7 +48,8 @@ Helper code for handling RESTful APIs using bottle.
 
 Code included:
 - body: a decorator that parses a call body and passes it to a route as an argument. The decorator can apply a schema (any callable including a voluptuous.Schema), return a default, and enforce that a body is required.
-
+- paginated: a decorator that returns paginated data with correct limit/offset validation and HTTP responses.
+- process_params: parses query parameters from bottle request
 
 
 ## release
