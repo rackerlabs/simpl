@@ -17,8 +17,10 @@
 """Tests for simpl.config."""
 from __future__ import print_function
 
+import argparse
 import errno
 import os
+import string
 import sys
 import tempfile
 import textwrap
@@ -376,6 +378,40 @@ class TestConfig(unittest.TestCase):
             myconf.parse()
         self.assertEqual(errno.ENOENT, err.exception.errno)
         self.assertIn(expected_message, str(err.exception))
+
+    @mock.patch('sys.stdout', new_callable=six.StringIO)
+    def test_default_help_formatter(self, mock_stdout):
+        """Default Belp Formatter Still Works."""
+        OPTS = [
+            config.Option(
+                '--host',
+                help='Server address.',
+                default='127.0.0.1',
+            )
+        ]
+
+        self.maxDiff = None
+        conf = config.Config(
+            options=OPTS,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            prog='test')
+        try:
+            conf.parse(argv=['test.py', '-h'])
+        except SystemExit:
+            pass
+        expected = """\
+usage: test [-h] [--ini PATH] [--host HOST]
+
+optional arguments:
+  -h, --help   show this help message and exit
+  --host HOST  Server address. (default: 127.0.0.1)
+
+initialization (metaconfig) arguments:
+  evaluated first and can be used to source an entire config
+
+  --ini PATH   Source some or all of the options from this ini file.
+"""
+        self.assertEqual(mock_stdout.getvalue(), expected)
 
 if __name__ == '__main__':
     unittest.main()
