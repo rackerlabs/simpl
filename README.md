@@ -1,5 +1,7 @@
 # simpl
 
+[![Build Status](https://travis-ci.org/checkmate/simpl.svg?branch=master)](https://travis-ci.org/checkmate/simpl)
+
 Common Python libraries for:
 
 - [Configuration](#config)
