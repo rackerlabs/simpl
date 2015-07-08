@@ -1,7 +1,11 @@
 # Guidelines for Contributing to `simpl`
 
 `simpl` is a collection of common, recurring patterns we have found useful
-while building many REST API's.
+while building many REST API's. In @samstav's words, its purpose is: "to
+eliminate duplicate code, tests, and documentation, while giving us a
+definitive venue for discussion on the more 'generic' modules, utilities, and
+even style/contribution/design principles, and standards we [can] use across
+projects."
 
 `simpl` is highly opinionated. You won't find generic implementations here. We
 stick to certain staples: [bottle](http://bottlepy.org/docs/dev/index.html),
@@ -57,6 +61,27 @@ __The following approach aims to reconcile these two competing demands:__
   and will no longer be available in `simpl.incubator`, requiring references to
   the module to be updated when upgrading to the version of `simpl` that has
   the module in __Core__.
+
+--------
+
+
+### Library Standards
+
+The team has agreed to consistently use several third-party Python packages.
+This list will likely be fairly dynamic as we are always looking for things
+that will increase our productivity. We have a strong preference for tools that
+follow the [Principle of Least Astonishment](http://c2.com/cgi/wiki?PrincipleOfLeastAstonishment)
+(also on [Wikipedia](https://en.wikipedia.org/wiki/Principle_of_least_astonishment)).
+
+The list:
+
+  - [bottle](https://pypi.python.org/pypi/bottle): Web application micro-framework
+  - [cryptography](https://pypi.python.org/pypi/cryptography): cryptographic recipes and primitives
+  - [eventlet](https://pypi.python.org/pypi/eventlet): concurrent networking library
+  - [pymongo](https://pypi.python.org/pypi/pymongo): MongoDB driver
+  - [redis](https://pypi.python.org/pypi/redis): Redis client library
+  - [requests](https://pypi.python.org/pypi/requests): makes http requests virtually painless
+  - [tornado](https://pypi.python.org/pypi/tornado): concurrent networking library
 
 --------
 
