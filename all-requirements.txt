@@ -3,5 +3,9 @@
 # For simpl.rest
 bottle==0.12.8
 
+# For simpl.server
+eventlet==0.17.4
+tornado==4.2
+
 # For simpl.middleware.cors
 WebOb==1.4.1
