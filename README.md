@@ -1,4 +1,6 @@
 # simpl
+[![Build Status](https://travis-ci.org/checkmate/simpl.svg?branch=master)](https://travis-ci.org/checkmate/simpl)
+[![Coverage Status](https://coveralls.io/repos/checkmate/simpl/badge.svg?branch=master)](https://coveralls.io/r/checkmate/simpl?branch=master)
 
 Common Python libraries for:
 
