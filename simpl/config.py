@@ -475,7 +475,8 @@ class Config(collections.MutableMapping):
         options = []
         for option in self._options:
             kwargs = option.kwargs.copy()
-            kwargs['default'] = argparse.SUPPRESS
+            if kwargs.get('default') is None:
+                kwargs['default'] = argparse.SUPPRESS
             temp = Option(*option.args, **kwargs)
             options.append(temp)
         parser = self.build_parser(options, permissive=permissive)
@@ -747,13 +748,19 @@ class MetaConfig(Config):
         Option('--ini', metavar='PATH',
                help=('Source some or all of the options from this ini file.'),
                type=normalized_path,
-               group=option_group, group_description=option_description),
+               group=option_group, group_description=option_description,
+               default=argparse.SUPPRESS),
     ]
 
     def __init__(self, options=None, **kwargs):
         """TODO(zns): add docstring."""
         options = options or self.options
         super(MetaConfig, self).__init__(options=options, **kwargs)
+
+    @property
+    def ini(self):
+        """Make sure to always return an ini value."""
+        return self._values.get('ini')
 
     def provision(self, conf):
         """Provision this metaconfig's config with what we gathered.
