@@ -199,22 +199,22 @@ class Option(object):
     add_arguments call in argparse. However, you have two additional kwargs
     available:
 
-        env: the name of the environment variable to use for this option
-        ini_section: the ini file section to look this value up from
-        group:              The name of the option/argument group.
-                            This is used to organize your Options in the
-                            help/usage output when -h or --help is invoked.
-                            It is also used to organize mutually exclusive
-                            argument groups if it is set and
-                            'mutually_exclusive' is set to True.
-        mutually_exclusive: Treat the option as mutually exclusive with other
-                            Options in the same 'group'. Using along with an
-                            explicit 'group' is highly recommended, otherwise
-                            the group name will use 'dest'. This fallback
-                            works well for multiple options which ultimately
-                            populate the same config value but have different
-                            types. e.g. --key and --key-file both of which
-                            have 'dest' of "key".
+    :keyword env:
+        The name of the environment variable to use for this option
+    :keyword ini_section:
+        The ini file section to look this value up from
+    :keyword group:
+        The name of the option/argument group. This is used to organize your
+        Options in the help/usage output when -h or --help is invoked. It is
+        also used to organize mutually exclusive argument groups if it is set
+        and 'mutually_exclusive' is set to True.
+    :keyword mutually_exclusive:
+        Treat the option as mutually exclusive with other Options in the same
+        'group'. Using along with an explicit 'group' is highly recommended,
+        otherwise the group name will use 'dest'. This fallback works well for
+        multiple options which ultimately populate the same config value but
+        have different types. e.g. --key and --key-file both of which have
+        'dest' of "key".
     """
 
     def __init__(self, *args, **kwargs):
@@ -530,9 +530,11 @@ class Config(collections.MutableMapping):
         """Parse config files and return configuration options.
 
         Expects array of files that are in ini format.
-        :param paths: list of paths to files to parse (uses ConfigParse logic).
-                      If not supplied, uses the ini_paths value supplied on
-                      initialization.
+
+        :param paths:
+            List of paths to files to parse (uses ConfigParse logic).
+            If not supplied, uses the ini_paths value supplied on
+            initialization.
         """
         namespace = namespace or self.prog
         results = {}

@@ -118,7 +118,7 @@ check_git_version()
 
 
 def git_init(repo_dir):
-    """Run git init in `repo_dir'."""
+    """Run git init in `repo_dir`."""
     return execute_git_command(['git', 'init'], repo_dir=repo_dir)
 
 
@@ -164,7 +164,7 @@ def git_list_config(repo_dir):
 
 
 def git_list_tags(repo_dir, with_messages=False):
-    """Return a list of git tags for the git repo in `repo_dir'."""
+    """Return a list of git tags for the git repo in `repo_dir`."""
     command = ['git', 'tag', '-l']
     if with_messages:
         command.append('-n1')
@@ -305,7 +305,7 @@ def git_branch(repo_dir, branch_name, start_point='HEAD',
 
 
 def git_checkout(repo_dir, ref, branch=None):
-    """Do a git checkout of `ref' in `repo_dir'.
+    """Do a git checkout of `ref` in `repo_dir`.
 
     If branch is specified it should be the name of the new branch.
     """
@@ -317,7 +317,7 @@ def git_checkout(repo_dir, ref, branch=None):
 
 
 def git_fetch(repo_dir, remote=None, refspec=None, verbose=False, tags=True):
-    """Do a git fetch of `refspec' in `repo_dir'.
+    """Do a git fetch of `refspec` in `repo_dir`.
 
     If 'remote' is None, all remotes will be fetched.
     """
@@ -339,7 +339,7 @@ def git_fetch(repo_dir, remote=None, refspec=None, verbose=False, tags=True):
 
 
 def git_pull(repo_dir, remote="origin", ref=None):
-    """Do a git pull of `ref' from `remote'."""
+    """Do a git pull of `ref` from `remote`."""
     command = ['git', 'pull', '--update-head-ok', pipes.quote(remote)]
     if ref:
         command.append(ref)
@@ -615,7 +615,8 @@ class GitRepo(object):
     def ls_tree(self, treeish='HEAD'):
         """List *all* files/dirs in the repo at ref 'treeish'.
 
-        Returns
+        Returns::
+
             [
                 {'mode': <file permissions>,
                  'type': <git object type>, # blob, tree, commit or tag
@@ -631,7 +632,8 @@ class GitRepo(object):
 
         This is similar to ls-remote, but shows the *local* refs.
 
-        Returns
+        Returns::
+
             {'HEAD': <commit_hash0>,
              <ref1>: <commit_hash1>,
              <ref2>: <commit_hash2>,
@@ -647,7 +649,8 @@ class GitRepo(object):
         'remote' can be a remote ref in a local repo, e.g. origin,
         or url of a remote repository.
 
-        Returns
+        Returns::
+
             {<ref1>: <commit_hash1>,
              <ref2>: <commit_hash2>,
              ...,
@@ -663,7 +666,8 @@ class GitRepo(object):
         """Return a list of git tags for the repository.
 
         If 'with_messages' is True, returns
-        a list of (tag, message) tuples
+        a list of (tag, message) tuples::
+
             [(<tag1>, <message1>), (<tag2>, <message2>)]
         """
         return git_list_tags(
@@ -676,7 +680,8 @@ class GitRepo(object):
     def list_branches(self):
         """Return a list of dicts, describing the branches.
 
-        Returns
+        Returns::
+
             [
                 {'branch': <branchname,
                  'commit': <commit_hash>,
@@ -697,16 +702,16 @@ class GitRepo(object):
             checkout=checkout)
 
     def checkout(self, ref, branch=None):
-        """Do a git checkout of `ref'."""
+        """Do a git checkout of `ref`."""
         return git_checkout(self.repo_dir, ref, branch=branch)
 
     def fetch(self, remote=None, refspec=None, verbose=False, tags=True):
-        """Do a git fetch of `refspec'."""
+        """Do a git fetch of `refspec`."""
         return git_fetch(self.repo_dir, remote=remote,
                          refspec=refspec, verbose=verbose, tags=tags)
 
     def pull(self, remote="origin", ref=None):
-        """Do a git pull of `ref' from `remote'."""
+        """Do a git pull of `ref` from `remote`."""
         return git_pull(self.repo_dir, remote=remote, ref=ref)
 
     def add_all(self):

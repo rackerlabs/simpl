@@ -83,7 +83,7 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = ["contents.rst"]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -296,4 +296,8 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
 
-sys.path.insert(0, os.path.abspath('../../'))
+nitpick_ignore = [
+    ('py:class', '_abcoll.MutableMapping'),
+    ('py:class', 'exceptions.Exception'),
+    ('py:class', 'exceptions.RuntimeWarning'),
+]

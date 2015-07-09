@@ -12,6 +12,7 @@ env:
   - TOXENV=py27
   - TOXENV=py34
   - TOXENV=style
+  - TOXENV=docs
 # The following line tells Travis CI to build in a container
 sudo: false
 after_success: coveralls

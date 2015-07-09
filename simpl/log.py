@@ -17,7 +17,7 @@
 Named `log` so as not to conflict with stdlib logging.
 
 Implements:
-- integration with :py:mod:`config` for configuring logging.
+- integration with :py:mod:`simpl.config` for configuring logging.
 - enhanced handling of extra data and output formatting.
 
 
@@ -80,9 +80,12 @@ def log_level(conf):
 
     --debug: turn on additional debug code/inspection (implies
              logging.DEBUG)
+
     --verbose: turn up logging output (logging.DEBUG)
+
     --quiet: turn down logging output (logging.WARNING)
-    default is logging.INFO
+
+    Default is logging.INFO
     """
     if conf.debug is True:
         return logging.DEBUG
@@ -99,7 +102,7 @@ def configure(conf, default_config=None):
 
     Turn on console logging if no logging files found
 
-    :param config: object with configuration namespace (argparse parser)
+    :param conf: object with configuration namespace (argparse parser)
     """
     if conf.logconfig and os.path.isfile(conf.logconfig):
         logging.config.fileConfig(conf.logconfig,
@@ -114,7 +117,7 @@ def configure(conf, default_config=None):
 def _get_debug_formatter(conf):
     """Get debug formatter based on configuration.
 
-    :param config: configurtration namespace (ex. argparser)
+    :param conf: configurtration namespace (ex. argparser)
 
     --debug: log line numbers and file data also
     --verbose: standard debug
