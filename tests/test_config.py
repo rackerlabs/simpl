@@ -18,6 +18,7 @@
 from __future__ import print_function
 
 import argparse
+import copy
 import errno
 import os
 import string
@@ -51,6 +52,15 @@ class TestConfig(unittest.TestCase):
         fp = tempfile.NamedTemporaryFile(*args, **kwargs)
         self.addCleanup(fp.close)
         return fp
+
+    def test_copies(self):
+        cfg = config.Config(options=[
+            config.Option('--one', default=1),
+            config.Option('--a', default='a'),
+            config.Option('--none'),
+        ])
+        another = copy.copy(cfg)
+        self.assertEqual(cfg, another)
 
     def test_instantiation(self):
         empty = config.Config(options=[])

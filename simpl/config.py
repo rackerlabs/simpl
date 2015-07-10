@@ -438,6 +438,10 @@ class Config(collections.MutableMapping):
 
     def __getattr__(self, attr):
         """Get attribute."""
+        # protection from infinite recursion when __init__
+        # is skipped during object creation (probably copy.copy)
+        if attr == '_values':
+            raise AttributeError()
         if attr in self._values:
             return self._values[attr]
         else:
