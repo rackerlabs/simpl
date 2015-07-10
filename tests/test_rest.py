@@ -33,7 +33,7 @@ class TestBodyDecorator(unittest.TestCase):
         decorated = rest.body()(mock_handler)
         self.assertTrue(callable(decorated))
         self.assertEqual(decorated(), 'X')
-        mock_handler.assert_called_once()
+        mock_handler.assert_called_once_with(None)
 
     @mock.patch.object(rest.bottle, 'request')
     def test_schema(self, mock_request):
@@ -229,7 +229,7 @@ class TestRangeResponse(unittest.TestCase):
         decorated = rest.paginated('widget')(mock_handler)
         self.assertTrue(callable(decorated))
         self.assertEqual(decorated(), {})
-        mock_handler.assert_called_once()
+        mock_handler.assert_called_once_with()
 
     def test_paginated_validation(self):
         mock_handler = mock.Mock(return_value={})
