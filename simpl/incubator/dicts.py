@@ -245,9 +245,9 @@ def merge_lists(dest, source, extend_lists=False):
         left = dest
         right = source[:]
         if len(dest) > len(source):
-            right.extend([None for _ in range(len(dest) - len(source))])
+            right.extend([None] * (len(dest) - len(source)))
         elif len(dest) < len(source):
-            left.extend([None for _ in range(len(source) - len(dest))])
+            left.extend([None] * (len(source) - len(dest)))
         # Merge lists
         for index, value in enumerate(left):
             if value is None and right[index] is not None:
