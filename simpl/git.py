@@ -600,6 +600,7 @@ class GitRepo(object):
         """Create an annotated tag."""
         return git_tag(self.repo_dir, tagname, message=message, force=force)
 
+    # pylint: disable=invalid-name
     def ls(self):
         """Return a list of *all* files & dirs in the repo.
 

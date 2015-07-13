@@ -1,7 +1,8 @@
 [Messages Control]
-# W0511: TODOs in code comments are fine.
-# W0142: *args and **kwargs are fine.
-disable=W0511,W0142
+enable=C,E,F
+disable=W,R,I,fixme,too-many-arguments,wildcard-import,no-absolute-import,bad-builtin,import-error
+# NOTE(larsbutler): import-error is a spurious message from a bug, it seems.
+# See https://bitbucket.org/logilab/pylint/issues/324/namespaces-and-virutlaenv.
 
 [BASIC]
 # Don't require docstrings on tests or Python Special Methods
