@@ -21,6 +21,7 @@ import mock
 import six
 
 from simpl import rest
+import webtest
 
 
 class TestBodyDecorator(unittest.TestCase):
@@ -302,6 +303,144 @@ class TestProcessParams(unittest.TestCase):
         results = rest.process_params(request, filter_fields=defaults.keys(),
                                       defaults=defaults)
         self.assertEqual(results, {'status': 'INACTIVE', 'size': 1})
+
+
+class TestAPIBasics(unittest.TestCase):
+
+    """Test REST API routing and responses."""
+
+    def setUp(self):
+        """Init the tests by starting the bottle app and routes."""
+        super(TestAPIBasics, self).setUp()
+        app = bottle.Bottle()
+        app.default_error_handler = rest.error_formatter
+        self.app = webtest.TestApp(app)
+
+        app.route('/', ['GET'], self.dummy_ok)
+        app.route('/fail', ['GET'], self.dummy_fail)
+        app.route('/bad', ['GET'], self.bad_code)
+        app.route('/assert', ['GET'], self.dummy_assert)
+        app.route('/unhandled', ['GET'], self.dummy_unhandled)
+
+    @staticmethod
+    def dummy_ok():
+        """Dummy call for route testing."""
+        return
+
+    @staticmethod
+    def dummy_fail():
+        """Dummy call for route testing."""
+        raise rest.HTTPError("Broken!", http_code=418, reason="Woops!")
+
+    @staticmethod
+    def bad_code():
+        """Dummy call for route testing."""
+        raise rest.HTTPError("wat?!", http_code=419, reason="Because")
+
+    @staticmethod
+    def dummy_assert():
+        """Dummy call for route testing."""
+        assert False, "Not what we expected"
+
+    @staticmethod
+    def dummy_unhandled():
+        """Dummy call for route testing."""
+        raise Exception("Possibly sensitive data")
+
+    def test_default_404(self):
+        res = self.app.get('/foo', expect_errors=True)
+        self.assertEqual(res.status, '404 Not Found')
+        self.assertEqual(res.content_type, 'application/json')
+        expected = {
+            'error': {
+                'code': 404,
+                'message': 'Not Found',
+                'description': "Not found: '/foo'",
+            }
+        }
+        self.assertEqual(res.json, expected)
+
+    def test_default_405(self):
+        res = self.app.post('/', expect_errors=True)
+        self.assertEqual(res.status, '405 Method Not Allowed')
+        self.assertEqual(res.content_type, 'application/json')
+        expected = {
+            'error': {
+                'code': 405,
+                'message': 'Method Not Allowed',
+                'description': "Method not allowed.",
+            }
+        }
+        self.assertEqual(res.json, expected)
+
+    def test_raised_http_error(self):
+        res = self.app.get('/fail', expect_errors=True)
+        self.assertEqual(res.status, "418 I'm a teapot")
+        self.assertEqual(res.content_type, 'application/json')
+        expected = {
+            'error': {
+                'code': 418,
+                'message': "I'm a teapot",
+                'description': 'Broken!',
+                'reason': "Woops!",
+            }
+        }
+        self.assertEqual(res.json, expected)
+
+    def test_bad_http_code(self):
+        res = self.app.get('/bad', expect_errors=True)
+        self.assertEqual(res.status, '419 Unknown')
+        self.assertEqual(res.content_type, 'application/json')
+        expected = {
+            'error': {
+                'code': 419,
+                'message': "Unknown",
+                'description': "wat?!",
+                'reason': 'Because',
+            }
+        }
+        self.assertEqual(res.json, expected)
+
+    def test_asserts_become_500(self):
+        res = self.app.get('/assert', expect_errors=True)
+        self.assertEqual(res.status, '400 Bad Request')
+        self.assertEqual(res.content_type, 'application/json')
+        expected = {
+            'error': {
+                'code': 400,
+                'message': 'Bad Request',
+                'description': "Not what we expected",
+            }
+        }
+        self.assertEqual(res.json, expected)
+
+    def test_unhandled_500(self):
+        res = self.app.get('/unhandled', expect_errors=True)
+        self.assertEqual(res.status, '500 Internal Server Error')
+        self.assertEqual(res.content_type, 'application/json')
+        expected = {
+            'error': {
+                'code': 500,
+                'message': 'Internal Server Error',
+                'description': "Unexpected error",
+            }
+        }
+        self.assertTrue(res.body.lower().find(b'internal') > 0)
+        self.assertEqual(res.body.lower().find(b'sensitive'), -1)
+        self.assertEqual(res.json, expected)
+
+    def test_yaml(self):
+        res = self.app.get('/foo',
+                           headers={'Accept': 'application/x-yaml'},
+                           expect_errors=True)
+        self.assertEqual(res.content_type, 'application/x-yaml')
+        expected = b"""\
+error:
+  code: 404
+  description: 'Not found: ''/foo'''
+  message: Not Found
+"""
+        self.assertEqual(res.body, expected)
 
 
 if __name__ == '__main__':
