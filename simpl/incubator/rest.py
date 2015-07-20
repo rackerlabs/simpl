@@ -117,62 +117,27 @@ def coerce_many(schema=str):
     return validate
 
 
-def schema(body_schema=None, body_required=False, query_schema=None,
-           content_types=None, default_body=None):
-    """Decorator to parse and validate API body and query string.
+def query(schema=None):
+    """Decorator to parse and validate API query string.
 
     This decorator allows one to define the entire 'schema' for an API
     endpoint.
-
-    :keyword body_schema:
-        Callable that accepts raw data and returns the coerced (or unchanged)
-        body content if it is valid. Otherwise, an error should be raised.
-
-    :keyword body_required:
-        `True` if some body content is required by the request. Defaults to
-        `False`.
 
     :keyword query_schema:
         Callable that accepts raw data and returns the coerced (or unchanged)
         query string content if it is valid. Otherwise, an error should be
         raised.
-
-    :keyword content_types:
-        List of allowed contents types for request body contents. Defaults to
-        `['application/json']`.
-
-    :keyword default_body:
-        Default body value to pass to the endpoint handler if `body_required`
-        is `True` but no body was given. This can be useful for specifying
-        complex request body defaults.
     """
-    if not content_types:
-        content_types = ['application/json']
-    if not all('json' in t for t in content_types):
-        raise NotImplementedError("Only 'json' body supported.")
-
     def deco(func):
         """Return a decorated callable."""
         def wrapped(*args, **kwargs):
-            """Validate/coerce request body and parameters."""
+            """Validate/coerce request query parameters."""
             try:
-                # validate the request body per the schema (if applicable):
-                body = bottle.request.json
-                if body is None:
-                    body = default_body
-                if body_required and not body:
-                    bottle.abort(400, 'Call body cannot be empty')
-                if body_schema:
-                    try:
-                        body = body_schema(body)
-                    except volup.MultipleInvalid as exc:
-                        raise MultiValidationError(exc.errors)
-
                 # validate the query string per the schema (if application):
                 query = bottle.request.query.dict
                 if query_schema is not None:
                     try:
-                        query = query_schema(query)
+                        query = schema(query)
                     except volup.MultipleInvalid as exc:
                         raise MultiValidationError(exc.errors)
                 if not query:
@@ -182,7 +147,6 @@ def schema(body_schema=None, body_required=False, query_schema=None,
                 # Pass `body` and `query` as kwargs to the decorated function.
                 return func(
                     *args,
-                    body=body,
                     query=query,
                     **kwargs
                 )
