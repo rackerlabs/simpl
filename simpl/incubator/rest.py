@@ -154,3 +154,44 @@ def query(schema=None):
                 bottle.abort(400, str(exc))
         return wrapped
     return deco
+
+
+def body(schema=None, types=None, required=False, default=None):
+    """Decorator to parse and validate API body.
+
+    :keyword schema: callable that accepts raw data and returns the coerced (or
+        unchanged) data if it is valid. It should raise an error if the data is
+        not valid.
+    :keyword types: supported content types (default is ['application/json'])
+    :keyword required: if true and no body specified will raise an error.
+    :keyword default: default value to return if no body supplied
+
+    Note: only json types are supported.
+    """
+    if not types:
+        types = ['application/json']
+    if not all('json' in t for t in types):
+        raise NotImplementedError("Only 'json' body supported.")
+
+    def wrap(fxn):
+        """Return a decorated callable."""
+        def wrapped(*args, **kwargs):
+            """Callable to called when the decorated function is called."""
+            body = bottle.request.json
+            if required and not body:
+                bottle.abort(400, "Call body cannot be empty")
+            if body is None:
+                body = default
+            if schema:
+                try:
+                    body = schema(body)
+                except (KeyboardInterrupt, SystemExit):
+                    raise  # don't catch and ignore attempts to end the app
+                except Exception as exc:
+                    bottle.abort(400, str(exc))
+            # Once we've validate and possible updated the request body
+            # contents, slap it back onto the request.
+            bottle.request.json = body
+            return fxn(*args, **kwargs)
+        return wrapped
+    return wrap
