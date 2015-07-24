@@ -140,14 +140,13 @@ def query(schema=None):
                         query = schema(query)
                     except volup.MultipleInvalid as exc:
                         raise MultiValidationError(exc.errors)
-                if not query:
-                    # If the query dict is empty, just set it to None.
-                    query = None
 
-                # Pass `body` and `query` as kwargs to the decorated function.
+                # Assign the possibly-modified query back the bottle request
+                # query object.
+                bottle.request.query = bottle.FormsDict(query)
+
                 return func(
                     *args,
-                    query=query,
                     **kwargs
                 )
             except Exception as exc:
