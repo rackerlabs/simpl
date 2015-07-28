@@ -33,8 +33,8 @@ class TestBodyDecorator(unittest.TestCase):
         mock_handler = mock.Mock(return_value='X')
         decorated = rest.body()(mock_handler)
         self.assertTrue(callable(decorated))
-        self.assertEqual(decorated(), 'X')
-        mock_handler.assert_called_once_with(None)
+        self.assertEqual(decorated('arg', kwarg=2), 'X')
+        mock_handler.assert_called_once_with(None, 'arg', kwarg=2)
 
     @mock.patch.object(rest.bottle, 'request')
     def test_schema(self, mock_request):

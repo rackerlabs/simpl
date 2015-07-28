@@ -60,7 +60,7 @@ def body(schema=None, types=None, required=False, default=None):
 
     def wrap(fxn):
         """Return a decorated callable."""
-        def wrapped(*args):
+        def wrapped(*args, **kwargs):
             """Callable to called when the decorated function is called."""
             data = bottle.request.json
             if required and not data:
@@ -74,7 +74,7 @@ def body(schema=None, types=None, required=False, default=None):
                     raise  # don't catch and ignore attempts to end the app
                 except Exception as exc:
                     bottle.abort(400, str(exc))
-            return fxn(data, *args)
+            return fxn(data, *args, **kwargs)
         return wrapped
     return wrap
 
