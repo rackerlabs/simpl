@@ -32,12 +32,21 @@ API_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 def get_time_string(time_gmt=None):
     """The canonical time string format (in UTC).
 
-    Changing this function will change all times that this project uses in
-    the API returned data.
+    :keyword time_gmt: this is a time_struct, datetime class, or None. If None,
+        the current time is used. Its name, time_gmt, is for legacy support for
+        functions that called it before it supported multiple values.
+
+    Changing this function will change all times that projects using simpl
+        return in their APIs.
     """
-    assert time_gmt is None or isinstance(time_gmt, time.struct_time), (
-        "time_gmt must be a time_struct or none, not a %s" % type(time_gmt))
-    return time.strftime(API_FORMAT, time_gmt or time.gmtime())
+    if isinstance(time_gmt, datetime.datetime):
+        time_gmt = time_gmt.timetuple()
+    if time_gmt is None:
+        time_gmt = time.gmtime()
+    if isinstance(time_gmt, time.struct_time):
+        return time.strftime(API_FORMAT, time_gmt)
+    raise TypeError("time_gmt must be a time_struct, datetime, or None. A %s "
+                    "was passed." % type(time_gmt))
 
 
 def parse_time_string(time_string):
