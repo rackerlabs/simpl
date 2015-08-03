@@ -10,6 +10,7 @@ Common Python libraries for:
 - [Python Utilites](#python)
 - [WSGI Middleware](#middleware)
 - [REST API Tooling](#rest)
+- [Date/Time (chronos)](#chronos)
 
 ## <a name="config"></a>Config
 
@@ -52,6 +53,10 @@ Code included:
 - body: a decorator that parses a call body and passes it to a route as an argument. The decorator can apply a schema (any callable including a voluptuous.Schema), return a default, and enforce that a body is required.
 - paginated: a decorator that returns paginated data with correct limit/offset validation and HTTP responses.
 - process_params: parses query parameters from bottle request
+
+## <a name="chronos"></a>Date/Time Utilites
+
+Provides functions that consistently format date/time and timestamp data for use in APIs.
 
 
 ## release
