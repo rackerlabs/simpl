@@ -10,3 +10,6 @@ tornado==4.2
 
 # For simpl.middleware.cors
 WebOb==1.4.1
+
+# MongoDB
+https://github.com/ziadsawalha/MongoDBProxy/archive/master.zip

@@ -11,6 +11,7 @@ Common Python libraries for:
 - [WSGI Middleware](#middleware)
 - [REST API Tooling](#rest)
 - [Date/Time (chronos)](#chronos)
+- [MongoDB Backedn Wrapper](#mongo)
 
 ## <a name="config"></a>Config
 
@@ -58,6 +59,11 @@ Code included:
 
 Provides functions that consistently format date/time and timestamp data for use in APIs.
 
+## <a name="mongo"></a>MongoDB Backend Wrapper
+
+Implements an opinionated wrapper for MongoDB databases and collections
+that works with the [rest][#rest] module and supports query param filtering
+(including text search) and pagination of backend collections.
 
 ## release
 [![latest](https://img.shields.io/pypi/v/simpl.svg)](https://pypi.python.org/pypi/simpl)

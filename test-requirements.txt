@@ -4,6 +4,7 @@ hacking            # requires flake8==2.2.4,pep8==1.5.7
 coverage
 flake8_docstrings
 mock
+mongobox
 nose
 nose-ignore-docstring
 pylint
