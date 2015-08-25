@@ -542,7 +542,13 @@ class Config(collections.MutableMapping):
         """
         namespace = namespace or self.prog
         results = {}
-        self.ini_config = configparser.SafeConfigParser()
+        # DeprecationWarning: SafeConfigParser has been renamed to ConfigParser
+        # in Python 3.2. This alias will be removed in future versions. Use
+        # ConfigParser directly instead.
+        if sys.version_info < (3, 2):
+            self.ini_config = configparser.SafeConfigParser()
+        else:
+            self.ini_config = configparser.ConfigParser()
 
         parser_errors = (configparser.NoOptionError,
                          configparser.NoSectionError)
