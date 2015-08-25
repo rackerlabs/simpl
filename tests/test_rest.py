@@ -262,10 +262,17 @@ class TestProcessParams(unittest.TestCase):
 
     def test_standard(self):
         request = bottle.BaseRequest(environ={
-            'QUERY_STRING': 'limit=100&offset=0&q=txt&facets=status'
+            'QUERY_STRING': 'limit=100&offset=0&facets=status'
         })
         results = rest.process_params(request)
         self.assertEqual(results, {})
+
+    def test_text(self):
+        request = bottle.BaseRequest(environ={
+            'QUERY_STRING': 'q=txt'
+        })
+        results = rest.process_params(request)
+        self.assertEqual(results, {'q': ['txt']})
 
     def test_invalid(self):
         request = bottle.BaseRequest(environ={

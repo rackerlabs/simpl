@@ -289,6 +289,12 @@ def process_params(request, standard_params=STANDARD_QUERY_PARAMS,
         sort = list(itertools.chain(*(
             comma_separated_strings(str(k)) for k in sort)))
         query_fields['sort'] = sort
+    if 'q' in request.query:
+        search = request.query.getall('q')
+        search = list(itertools.chain(*(
+            comma_separated_strings(k) for k in search
+            if k)))
+        query_fields['q'] = search
     return query_fields
 
 

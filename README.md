@@ -11,7 +11,7 @@ Common Python libraries for:
 - [WSGI Middleware](#middleware)
 - [REST API Tooling](#rest)
 - [Date/Time (chronos)](#chronos)
-- [MongoDB Backedn Wrapper](#mongo)
+- [MongoDB Backend Wrapper](#mongo)
 
 ## <a name="config"></a>Config
 
