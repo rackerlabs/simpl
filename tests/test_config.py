@@ -21,7 +21,6 @@ import argparse
 import copy
 import errno
 import os
-import string
 import sys
 import tempfile
 import textwrap
@@ -35,6 +34,7 @@ from simpl import exceptions as simpl_exceptions
 
 
 class TestParsers(unittest.TestCase):
+
     def test_comma_separated_strings(self):
         expected = ['1', '2', '3']
         result = config.comma_separated_strings("1,2,3")
@@ -87,6 +87,13 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(cfg.one, cfg['one'])
         self.assertEqual(cfg['one'], 1)
         self.assertIsNone(cfg['none'])
+
+    def test_strict(self):
+        cfg = config.Config(options=[
+            config.Option('--one', default=1),
+        ])
+        with self.assertRaises(SystemExit):
+            cfg.parse(['prog', '--foo'], strict=True)
 
     @mock.patch.dict('os.environ', {'TEST_TWO': '2'})
     def test_required(self):
