@@ -7,6 +7,7 @@ mock
 mongobox
 nose
 nose-ignore-docstring
+prettyprint
 pylint
 pyyaml
 requests

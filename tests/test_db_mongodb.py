@@ -1,3 +1,4 @@
+# coding=utf-8
 # All Rights Reserved.
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -31,25 +32,6 @@ class TestDB(mongodb.SimplDB):
 
     def tune(self):
         pass  # bypass async tuning in tests
-
-
-def build_search_string(strings):
-    """Emulate `rest.process_params` parsing of `q` param."""
-    assert isinstance(strings, list)
-    if len(strings) == 1:
-        name = {'name': strings[0]}
-    else:
-        name = {
-            '$or': [
-                {'name': {'$regex': s, '$options': 'i'}} for s in strings
-            ]
-        }
-    return {
-        '$or': [
-            {'$text': {'$search': ' '.join(strings)}},
-            name
-        ]
-    }
 
 
 class TestMongoDB(unittest.TestCase):
@@ -164,22 +146,22 @@ class TestMongoDB(unittest.TestCase):
         self.db.prose.save("B", {"name": "Johnny Walker",
                                  "keywords": "whisky health"})
         # Single word
-        search = build_search_string(['john'])
+        search = mongodb.build_text_search(['john'])
         result = self.db.prose.list(**search)
         self.assertEqual(result[0][0]['name'], "John Adams")
 
         # Second word
-        search = build_search_string(['adams'])
+        search = mongodb.build_text_search(['adams'])
         result = self.db.prose.list(**search)
         self.assertEqual(result[0][0]['name'], "John Adams")
 
         # Multiple words in search
-        search = build_search_string(['wealth', 'health'])
+        search = mongodb.build_text_search(['wealth', 'health'])
         result = self.db.prose.list(**search)
         self.assertEqual(result[1], 2)
 
         # Keyword
-        search = build_search_string(['whisky'])
+        search = mongodb.build_text_search(['whisky'])
         result = self.db.prose.list(**search)
         self.assertEqual(result[0][0]['name'], "Johnny Walker")
 
@@ -416,7 +398,6 @@ class TestMongoDBCapabilities(unittest.TestCase):
             fields={'_lock': 0, '_id': 0}
         )
         self.assertIsNone(obj)
-
 
 if __name__ == '__main__':
     unittest.main()

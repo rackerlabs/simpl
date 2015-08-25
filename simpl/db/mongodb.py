@@ -115,6 +115,55 @@ def scrub(data):
         raise ValidationError("Input '%s' not permitted: %s" % (data, exc))
 
 
+def build_text_search(strings, name_field='name'):
+    """Build mongodb query that performs text search for string(s).
+
+    This is the backend implementation of the front-end search box on a list.
+    It performs text search on a text index and a regex search on a `name`
+    field. The value(s) for this are parsed by `rest.process_params` from the
+    `q` query param.
+
+    :param list strings: strings to search on.
+    :keyword str name: field to search on in addition to search index.
+
+    For example, searching the following collection for 'john':
+
+    #  Name    Description (in text index)
+    -  ------  ---------------------------
+    1  John    Big boss
+    2  Johnny  Boss' son
+    3  Thomas  John's first employee
+    4  Henry   He quit
+
+    Search returns all records except the last one:
+    #1 - match on name
+    #2 - partial match on name
+    #3 - text index match on description
+
+    >>> import pprint
+    >>> pprint.pprint(build_text_search(['john']))
+    {'$or': [{'$text': {'$search': 'john'}},
+             {'name': {'$options': 'i', '$regex': 'john'}}]}
+
+    >>> import pprint
+    >>> pprint.pprint(build_text_search(['john', 'tom'], name_field='objName'))
+    {'$or': [{'$text': {'$search': 'john tom'}},
+             {'$or': [{'objName': {'$options': 'i', '$regex': 'john'}},
+                      {'objName': {'$options': 'i', '$regex': 'tom'}}]}]}
+    """
+    assert isinstance(strings, list)
+
+    text_search = {'$text': {'$search': ' '.join(strings)}}
+
+    searches = [{name_field: {'$regex': s, '$options': 'i'}} for s in strings]
+    if len(searches) == 1:
+        name_search = searches[0]
+    else:
+        name_search = {'$or': searches}
+
+    return {'$or': [text_search, name_search]}
+
+
 class SimplDB(object):
 
     """Database wrapper.
