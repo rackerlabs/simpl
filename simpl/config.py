@@ -259,10 +259,7 @@ class Option(object):
                 kwargs['help'] = "%s (or set %s)" % (kwargs['help'],
                                                      kwargs['env'])
             if permissive:
-                try:
-                    required = kwargs.pop('required', None)
-                except KeyError:
-                    pass
+                required = kwargs.pop('required', None)
             try:
                 del kwargs['env']
             except KeyError:
