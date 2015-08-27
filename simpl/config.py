@@ -870,7 +870,7 @@ def current():
     return SINGLETON
 
 
-def main():
+def main():  # pragma: no cover
     """Simple tests."""
     opts = [
         Option('--foo'),
@@ -891,5 +891,5 @@ def main():
     myconf.parse()
     print(myconf)
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
