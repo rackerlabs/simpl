@@ -259,10 +259,7 @@ class Option(object):
                 kwargs['help'] = "%s (or set %s)" % (kwargs['help'],
                                                      kwargs['env'])
             if permissive:
-                try:
-                    required = kwargs.pop('required', None)
-                except KeyError:
-                    pass
+                required = kwargs.pop('required', None)
             try:
                 del kwargs['env']
             except KeyError:
@@ -407,7 +404,8 @@ class Config(collections.MutableMapping):
             options=self._metaconf._options, permissive=False, **override)
         self._parser_kwargs.setdefault('parents', [])
         self._parser_kwargs['parents'].append(metaparser)
-        self._metaconf.parse(argv=argv)
+        self._metaconf._values = self._metaconf.load_options(
+            argv=argv, permissive=True)
         self._metaconf.provision(self)
 
     @staticmethod
@@ -489,8 +487,8 @@ class Config(collections.MutableMapping):
             valid, pass_thru = self.parse_passthru_args(argv[1:])
             parsed, extras = parser.parse_known_args(valid)
             if extras and not permissive:
-                raise AttributeError("Unrecognized arguments: %s" %
-                                     ' ,'.join(extras))
+                self.build_parser(options, permissive=permissive)
+                parser.parse_args(argv[1:])
             self.pass_thru_args = pass_thru + extras
         else:
             # maybe reset pass_thru_args on subsequent calls
@@ -542,7 +540,13 @@ class Config(collections.MutableMapping):
         """
         namespace = namespace or self.prog
         results = {}
-        self.ini_config = configparser.SafeConfigParser()
+        # DeprecationWarning: SafeConfigParser has been renamed to ConfigParser
+        # in Python 3.2. This alias will be removed in future versions. Use
+        # ConfigParser directly instead.
+        if sys.version_info < (3, 2):
+            self.ini_config = configparser.SafeConfigParser()
+        else:
+            self.ini_config = configparser.ConfigParser()
 
         parser_errors = (configparser.NoOptionError,
                          configparser.NoSectionError)
@@ -603,10 +607,10 @@ class Config(collections.MutableMapping):
                 results[option.dest] = option.type(secret)
         return results
 
-    def load_options(self, argv=None, keyring_namespace=None):
+    def load_options(self, argv=None, keyring_namespace=None, permissive=True):
         """Find settings from all sources."""
         defaults = self.get_defaults()
-        args = self.parse_cli(argv=argv, permissive=True)
+        args = self.parse_cli(argv=argv, permissive=permissive)
         env = self.parse_env()
         secrets = self.parse_keyring(keyring_namespace)
         ini = self.parse_ini()
@@ -618,10 +622,16 @@ class Config(collections.MutableMapping):
         results.update(args)
         return results
 
-    def parse(self, argv=None, keyring_namespace=None):
-        """Find settings from all sources."""
+    def parse(self, argv=None, keyring_namespace=None, strict=False):
+        """Find settings from all sources.
+
+        :returns: dict of parsed option name and values
+        :raises: SystemExit if invalid arguments supplied along with stdout
+            message (same as argparser).
+        """
         results = self.load_options(argv=argv,
-                                    keyring_namespace=keyring_namespace)
+                                    keyring_namespace=keyring_namespace,
+                                    permissive=not strict)
         # Run validation
         raise_for_group = {}
         for option in self._options:
@@ -815,9 +825,11 @@ def parse_key_format(value):
 SINGLETON = None
 
 
-def init(options=None, ini_paths=None, argv=None):
+def init(options=None, ini_paths=None, argv=None, strict=False):
     """Initialize singleton config and read/parse configuration.
 
+    :keyword bool strict: when true, will error out on invalid arguments
+        (default behavior is to ignore them)
     :returns: the loaded configuration.
     """
     global SINGLETON
@@ -825,7 +837,7 @@ def init(options=None, ini_paths=None, argv=None):
         options=options,
         ini_paths=ini_paths,
         argv=argv)
-    SINGLETON.parse(argv)
+    SINGLETON.parse(argv, strict=strict)
     return SINGLETON
 
 
@@ -855,7 +867,7 @@ def current():
     return SINGLETON
 
 
-def main():
+def main():  # pragma: no cover
     """Simple tests."""
     opts = [
         Option('--foo'),
@@ -876,5 +888,5 @@ def main():
     myconf.parse()
     print(myconf)
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()
