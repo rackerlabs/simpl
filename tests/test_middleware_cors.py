@@ -118,6 +118,5 @@ class TestCORSMiddleware(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 app({}, self.start_response)
 
-
 if __name__ == '__main__':
     unittest.main()
