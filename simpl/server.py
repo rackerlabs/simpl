@@ -16,10 +16,95 @@
 
 import logging
 import os
+import sys
+import textwrap
 
 import bottle
 
+from simpl import config
+from simpl.utils import cli as cli_utils
+
 LOG = logging.getLogger(__name__)
+
+_fill = lambda text: textwrap.fill(text, 50)
+
+OPTIONS = [
+    config.Option(
+        '--app', '-a',
+        help=("WSGI application to load by name.\n"
+              "Ex: package.module gets the module\n"
+              "    package.module:name gets the variable 'name'\n"
+              "    package.module.func() calls func() and gets the result"),
+        group='Server Options',
+    ),
+    config.Option(
+        '--host',
+        help='Proxy server address to bind to.',
+        default='127.0.0.1',
+        group='Server Options',
+    ),
+    config.Option(
+        '--port', '-p',
+        help='Proxy server port to bind to.',
+        type=int,
+        default=8080,
+        group='Server Options',
+    ),
+    config.Option(
+        '--server', '-s',
+        help=('Server adapter to use. To see more, run:\n'
+              '`python -c "import bottle;print('
+              'bottle.server_names.keys())"`\n'),
+        default='xtornado',
+        group='Server Options',
+    ),
+    config.Option(
+        '--debug', '-d',
+        help=_fill(
+            'Run bottle server with debug=True which is useful for '
+            'development or troubleshooting. Warning: This may expose raw '
+            'tracebacks and unmodified error messages in responses! Note: '
+            'this is not an option to configure DEBUG level logging.'),
+        default=False,
+        action='store_true',
+        group='Server Options',
+    ),
+    config.Option(
+        '--quiet', '-q',
+        help=_fill(
+            'Suppress bottle\'s output to stdout and stderr, e.g. '
+            '"Bottle v0.12.8 server starting up..." and others.'),
+        default=False,
+        action='store_true',
+        group='Server Options',
+    ),
+    config.Option(
+        '--no-reloader',
+        default=True,
+        dest='reloader',
+        action='store_false',
+        help=_fill(
+            'Disable bottle auto-reloading server, which automatically '
+            'restarts the server when file changes are detected. Note: '
+            'some server handlers, such as eventlet, do not support '
+            'auto-reloading.'),
+        group='Server Options',
+    ),
+    config.Option(
+        '--interval', '-i',
+        help='Auto-reloader interval in seconds',
+        type=int,
+        default=1,
+        group='Server Options',
+    ),
+]
+
+CONFIG = config.Config(
+    prog='simpl_server',
+    options=OPTIONS,
+    argparser_class=cli_utils.HelpfulParser,
+    formatter_class=cli_utils.SimplHelpFormatter
+)
 
 
 class EventletLogFilter(object):  # pylint: disable=R0903
