@@ -14,6 +14,10 @@
 
 """Simpl's base module for its command line interface."""
 
+import functools
+import logging
+
+from simpl import server
 from simpl.utils import cli as cli_utils
 
 
@@ -37,9 +41,18 @@ def default_subparser():
 
 def main(argv=None):
 
+    #
+    # `simpl server`
+    #
+    logging.basicConfig(level=logging.INFO)
+    server_func = functools.partial(server.main, argv=argv)
+    server_parser = server.attach_parser(default_subparser())
+    server_parser.set_defaults(_func=server_func)
+
     # the following code shouldn't need to change when
     # we add a new subcommand.
     args = default_parser().parse_args(argv)
+    args._func()
 
 
 if __name__ == '__main__':
