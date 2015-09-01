@@ -447,7 +447,7 @@ class Config(collections.MutableMapping):
             raise AttributeError("'config' object has no attribute '%s'"
                                  % attr)
 
-    def build_parser(self, options, permissive=False, **override_kwargs):
+    def build_parser(self, options=None, permissive=False, **override_kwargs):
         """Construct an argparser from supplied options.
 
         :keyword override_kwargs: keyword arguments to override when calling
@@ -461,10 +461,16 @@ class Config(collections.MutableMapping):
         kwargs.update(override_kwargs)
         if 'fromfile_prefix_chars' not in kwargs:
             kwargs['fromfile_prefix_chars'] = '@'
-        if options:
-            for option in options:
-                option.add_argument(parser, permissive=permissive)
         parser = self._parser_class(**kwargs)
+        if options is None:
+            options = []
+            for _opt in self._options:
+                _kw = _opt.kwargs.copy()
+                if _kw.get('default') is None:
+                    _kw['default'] = argparse.SUPPRESS
+                options.append(Option(*_opt.args, **_kw))
+        for option in options:
+            option.add_argument(parser, permissive=permissive)
         return parser
 
     def cli_values(self, argv):
