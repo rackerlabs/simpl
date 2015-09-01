@@ -32,15 +32,17 @@ SUBPARSER = PARSER.add_subparsers(
 
 
 def default_parser():
+    """Return global argumentparser."""
     return PARSER
 
 
 def default_subparser():
+    """Return global argumentparser's subparser."""
     return SUBPARSER
 
 
 def main(argv=None):
-
+    """Entry point for the `simpl` command."""
     #
     # `simpl server`
     #

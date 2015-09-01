@@ -39,13 +39,13 @@ OPTIONS = [
     ),
     config.Option(
         '--host',
-        help='Proxy server address to bind to.',
+        help='Server address to bind to.',
         default='127.0.0.1',
         group='Server Options',
     ),
     config.Option(
         '--port', '-p',
-        help='Proxy server port to bind to.',
+        help='Server port to bind to.',
         type=int,
         default=8080,
         group='Server Options',

@@ -19,7 +19,6 @@ import os
 import sys
 
 
-
 SimplHelpFormatter = type('SimplHelpFormatter',
                           (argparse.ArgumentDefaultsHelpFormatter,
                            argparse.RawTextHelpFormatter), {})
@@ -30,10 +29,12 @@ class HelpfulParser(argparse.ArgumentParser):
     """An argparser that won't leave you hanging."""
 
     def __init__(self, *args, **kwargs):
+        """Set formatter_class if it is not explicitly specified."""
         kwargs.setdefault('formatter_class', SimplHelpFormatter)
         super(HelpfulParser, self).__init__(*args, **kwargs)
 
     def error(self, message, print_help=False):
+        """Provide a more helpful message if there are too few arguments."""
         if 'too few arguments' in message.lower():
             target = sys.argv.pop(0)
             sys.argv.insert(
@@ -44,4 +45,3 @@ class HelpfulParser(argparse.ArgumentParser):
             self.print_help()
         sys.stderr.write('\nerror: %s\n' % message)
         sys.exit(2)
-
