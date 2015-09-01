@@ -347,7 +347,7 @@ class Config(collections.MutableMapping):
     """Parses configuration sources."""
 
     def __init__(self, options=None, ini_paths=None, argv=None,
-                 **parser_kwargs):
+                 argparser_class=argparse.ArgumentParser, **parser_kwargs):
         """Initialize with list of options.
 
         :param ini_paths: optional paths to ini files to look up values from
@@ -362,7 +362,8 @@ class Config(collections.MutableMapping):
                         for option in self._options}
         self._argv = argv
         self._metaconfigure(argv=self._argv)
-        self._parser = argparse.ArgumentParser(**parser_kwargs)
+        self._parser_class = argparser_class
+        self._parser = self._parser_class(**parser_kwargs)
         self._prog = None
         self.ini_config = None
         self.pass_thru_args = []
@@ -460,10 +461,10 @@ class Config(collections.MutableMapping):
         kwargs.update(override_kwargs)
         if 'fromfile_prefix_chars' not in kwargs:
             kwargs['fromfile_prefix_chars'] = '@'
-        parser = argparse.ArgumentParser(**kwargs)
         if options:
             for option in options:
                 option.add_argument(parser, permissive=permissive)
+        parser = self._parser_class(**kwargs)
         return parser
 
     def cli_values(self, argv):
