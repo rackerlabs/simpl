@@ -254,3 +254,52 @@ class XTornadoServer(bottle.ServerAdapter):  # pylint: disable=R0903
         tornado.ioloop.IOLoop.instance().start()
 
 bottle.server_names['xtornado'] = XTornadoServer
+
+
+def attach_parser(subparser):
+    """Given a subparser, build and return the server parser."""
+    return subparser.add_parser(
+        'server',
+        help='Run a bottle based server',
+        parents=[
+            CONFIG.build_parser(
+                add_help=False,
+                # might need conflict_handler
+            ),
+        ],
+    )
+
+
+def run(conf):
+    """Simpl server command line interface."""
+    # TODO(sam): Need a way to pass arbitrary kwargs
+    # to server handlers.
+
+    # bottle_kwargs = {key.replace('-', '_'): val
+    #                  for key, val in zip(extras[::2], extras[1::2])}
+
+    try:
+        if conf.reloader and not os.getenv('BOTTLE_CHILD'):
+            LOG.info("Running bottle server with reloader.")
+        return bottle.run(
+            app=conf.app,
+            server=conf.server,
+            host=conf.host,
+            port=conf.port,
+            interval=conf.interval,
+            reloader=conf.reloader,
+            quiet=conf.quiet,
+            debug=conf.debug,
+        )
+    except KeyboardInterrupt:
+        sys.exit("\nKilled simpl server.")
+
+
+def main(argv=None):
+    """Entry point for server, runs based on parsed CONFIG."""
+    CONFIG.parse(argv=argv)
+    return run(CONFIG)
+
+
+if __name__ == '__main__':
+    main()
