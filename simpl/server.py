@@ -59,7 +59,7 @@ OPTIONS = [
         group='Server Options',
     ),
     config.Option(
-        '--debug', '-d',
+        '--debug-server',
         help=_fill(
             'Run bottle server with debug=True which is useful for '
             'development or troubleshooting. Warning: This may expose raw '
@@ -70,7 +70,7 @@ OPTIONS = [
         group='Server Options',
     ),
     config.Option(
-        '--quiet', '-q',
+        '--quiet-server',
         help=_fill(
             'Suppress bottle\'s output to stdout and stderr, e.g. '
             '"Bottle v0.12.8 server starting up..." and others.'),
@@ -288,8 +288,8 @@ def run(conf):
             port=conf.port,
             interval=conf.interval,
             reloader=conf.reloader,
-            quiet=conf.quiet,
-            debug=conf.debug,
+            quiet=conf.quiet_server,
+            debug=conf.debug_server,
         )
     except KeyboardInterrupt:
         sys.exit("\nKilled simpl server.")
