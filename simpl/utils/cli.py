@@ -45,3 +45,21 @@ class HelpfulParser(argparse.ArgumentParser):
             self.print_help()
         sys.stderr.write('\nerror: %s\n' % message)
         sys.exit(2)
+
+
+def kwarg(string, separator='='):
+    """Return a dict from a delimited string."""
+    if separator not in string:
+        raise ValueError("Separator '%s' not in value '%s'"
+                         % (separator, string))
+    if string.strip().startswith(separator):
+        raise ValueError("Value '%s' starts with separator '%s'"
+                         % (string, separator))
+    if string.strip().endswith(separator):
+        raise ValueError("Value '%s' ends with separator '%s'"
+                         % (string, separator))
+    if string.count(separator) != 1:
+        raise ValueError("Value '%s' should only have one '%s' separator"
+                         % (string, separator))
+    key, value = string.split(separator)
+    return {key: value}

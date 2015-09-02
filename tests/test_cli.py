@@ -41,8 +41,8 @@ class TestSimplCLI(unittest.TestCase):
         parser = simpl_cli.PARSER
         self.assertEqual(parser.prog, 'simpl')
 
-    @mock.patch.object(server, 'run')
-    def test_simpl_server(self, mock_server_run):
+    @mock.patch.object(server.bottle, 'run')
+    def test_simpl_server(self, mock_bottle_run):
         simpl_cli.main(['server'])
 
     @mock.patch.object(server.bottle, 'run')
@@ -61,7 +61,7 @@ class TestSimplCLI(unittest.TestCase):
             host='127.0.0.1', debug=False, reloader=True)
 
     @mock.patch('sys.stderr', new_callable=StringIO)
-    def test_simpl_server_fail(self, mock_stderr, mock_server_run):
+    def test_simpl_server_fail(self, mock_stderr):
         with self.assertRaises(SystemExit):
             simpl_cli.main(['server', '--not-an-option'])
         mock_stderr.flush()
@@ -86,6 +86,28 @@ class TestSimplCLIUtils(unittest.TestCase):
         exp_regex = ('\nerror: too few arguments. Try getting '
                      'help with `.* --help`\n')
         self.assertRegexpMatches(output, exp_regex)
+
+    def test_kwargs_succeed(self):
+
+        expected = {
+            'hello': 'world',
+        }
+        data = cli_utils.kwarg('hello=world')
+        self.assertEqual(data, expected)
+
+    def test_kwargs_fail(self):
+
+        strings = [
+            # cannot start with a delimiter
+            '=world'
+            # cannot end with the delimiter
+            'more=',
+            # must have at least one pair
+            'true',
+        ]
+        for string in strings:
+            with self.assertRaises(ValueError):
+                data = cli_utils.kwarg(string)
 
 
 if __name__ == '__main__':
