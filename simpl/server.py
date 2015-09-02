@@ -292,6 +292,11 @@ def run(conf):
         options = {}
     else:
         options = copy.copy(conf.adapter_options)
+
+    # waiting for https://github.com/bottlepy/bottle/pull/783
+    if conf.app and (os.getcwd() not in sys.path):
+        sys.path.append(os.getcwd())
+
     try:
         if conf.reloader and not os.getenv('BOTTLE_CHILD'):
             LOG.info("Running bottle server with reloader.")
