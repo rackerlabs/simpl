@@ -14,6 +14,7 @@
 
 """Bottle Server Module."""
 
+import copy
 import logging
 import os
 import sys
@@ -86,7 +87,7 @@ OPTIONS = [
         help=_fill(
             'Disable bottle auto-reloading server, which automatically '
             'restarts the server when file changes are detected. Note: '
-            'some server handlers, such as eventlet, do not support '
+            'some server adapters, such as eventlet, do not support '
             'auto-reloading.'),
         group='Server Options',
     ),
@@ -95,6 +96,18 @@ OPTIONS = [
         help='Auto-reloader interval in seconds',
         type=int,
         default=1,
+        group='Server Options',
+    ),
+    config.Option(
+        '--adapter-options', '-o',
+        help=(
+            "Key-value pairs separated by '=' to be passed to \n"
+            "the underlying server adapter, e.g. XEventletServer, \n"
+            "and are mapped to the adapter's self.options \n"
+            "instance attribute. Example usage:\n"
+            "  simpl server -s xeventlet -o keyfile=~/mykey ciphers=GOST94\n"),
+        nargs='*',
+        type=cli_utils.kwarg,
         group='Server Options',
     ),
 ]
@@ -272,12 +285,13 @@ def attach_parser(subparser):
 
 def run(conf):
     """Simpl server command line interface."""
-    # TODO(sam): Need a way to pass arbitrary kwargs
-    # to server handlers.
-
-    # bottle_kwargs = {key.replace('-', '_'): val
-    #                  for key, val in zip(extras[::2], extras[1::2])}
-
+    if isinstance(conf.adapter_options, list):
+        options = {key: val for _dict in conf.adapter_options
+                   for key, val in _dict.items()}
+    elif conf.adapter_options is None:
+        options = {}
+    else:
+        options = copy.copy(conf.adapter_options)
     try:
         if conf.reloader and not os.getenv('BOTTLE_CHILD'):
             LOG.info("Running bottle server with reloader.")
@@ -290,6 +304,7 @@ def run(conf):
             reloader=conf.reloader,
             quiet=conf.quiet_server,
             debug=conf.debug_server,
+            **options
         )
     except KeyboardInterrupt:
         sys.exit("\nKilled simpl server.")
