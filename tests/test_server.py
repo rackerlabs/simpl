@@ -14,15 +14,18 @@
 
 """Test :mod:`simpl.server`."""
 
+import multiprocessing
 import os
 import signal
 import socket
+import time
 import unittest
 
 import bottle
 import mock
 import requests
 
+from simpl import cli as simpl_cli
 from simpl import server
 
 
@@ -43,6 +46,16 @@ class TestServer(unittest.TestCase):
         resp = run_server('xeventlet')
         self.assertTrue(resp.ok)
         self.assertEqual(resp.content, b'<b>Hello xeventlet</b>!')
+
+    def test_simpl_server(self):
+        argv = ['server', '--quiet-server', '--port', str(get_free_port())]
+        proc = multiprocessing.Process(
+            target=simpl_cli.main, kwargs={'argv': argv})
+        proc.start()
+        time.sleep(.5)
+        # Ensure the process is up after 1/2 a second.
+        self.assertTrue(proc.is_alive())
+        proc.terminate()
 
 
 class TestEventletLogger(unittest.TestCase):
