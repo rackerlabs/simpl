@@ -22,13 +22,23 @@ import mock
 from webtest.debugapp import debug_app
 
 from simpl.middleware import context
+from simpl import threadlocal
 
 
 class TestContextMiddleware(unittest.TestCase):
 
     def setUp(self):
+        super(TestContextMiddleware, self).setUp()
         self.filter = context.ContextMiddleware(debug_app)
         self.headers = []
+        # Disable clearing the context
+        self.patcher = mock.patch.object(threadlocal.ThreadLocalDict, 'clear')
+        self.mock = self.patcher.start()
+
+    def tearDown(self):
+        self.patcher.stop()
+        threadlocal.default().clear()
+        super(TestContextMiddleware, self).tearDown()
 
     def start_response(self, status, headers, exc_info=None):
         """Emulate WSGI start_response."""
@@ -93,6 +103,24 @@ class TestContextMiddleware(unittest.TestCase):
         self.assertIn('transaction_id', env['context'])
         self.assertEqual('12345abc', env['context']['transaction_id'])
 
+
+class TestContextCleanup(unittest.TestCase):
+
+    """Verify that context data is cleared after a request."""
+
+    def setUp(self):
+        self.filter = context.ContextMiddleware(debug_app)
+        self.headers = []
+
+    def start_response(self, status, headers, exc_info=None):
+        """Emulate WSGI start_response."""
+        self.headers += headers
+
+    def test_request(self):
+        env = {'REQUEST_METHOD': 'GET',
+               'PATH_INFO': '/'}
+        self.filter(env, self.start_response)
+        self.assertEqual(threadlocal.default(), {})
 
 if __name__ == '__main__':
     unittest.main()

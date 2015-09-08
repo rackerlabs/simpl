@@ -32,6 +32,7 @@ Example usage:
     bottle.run(app=chain)
 """
 
+import contextlib
 import logging
 import uuid
 
@@ -49,8 +50,8 @@ class ContextMiddleware(object):  # pylint: disable=R0903
         self.app = app
         self.override_url = override_url
 
-    def __call__(self, environ, start_response):
-        """Handle WSGI Request."""
+    def get_url(self, environ):
+        """Return the base URL."""
         if self.override_url:
             url = self.override_url
         else:
@@ -58,10 +59,10 @@ class ContextMiddleware(object):  # pylint: disable=R0903
             # can be used to reconstruct a request's complete URL
 
             # Much of the following is copied from bottle.py
-            http = environ.get('HTTP_X_FORWARDED_PROTO') \
-                or environ.get('wsgi.url_scheme', 'http')
-            host = environ.get('HTTP_X_FORWARDED_HOST') \
-                or environ.get('HTTP_HOST')
+            http = (environ.get('HTTP_X_FORWARDED_PROTO') or
+                    environ.get('wsgi.url_scheme', 'http'))
+            host = (environ.get('HTTP_X_FORWARDED_HOST') or
+                    environ.get('HTTP_HOST'))
             if not host:
                 # HTTP 1.1 requires a Host-header. This is for HTTP/1.0
                 # clients.
@@ -70,16 +71,27 @@ class ContextMiddleware(object):  # pylint: disable=R0903
                 if port and port != ('80' if http == 'http' else '443'):
                     host += ':' + port
             url = "%s://%s" % (http, host)
+        return url
 
-        # Use a default empty context
-        transaction_id = uuid.uuid4().hex
-        context = threadlocal.default()
+    def populate_context(self, context, environ):
+        """Set initial context values."""
+        url = self.get_url(environ)
         context['base_url'] = url
+        transaction_id = uuid.uuid4().hex
         context['transaction_id'] = transaction_id
-        environ['context'] = context
         LOG.debug("Context created: base_url=%s, tid=%s", url, transaction_id)
-        return self.app(environ, self.start_response_callback(start_response,
-                                                              transaction_id))
+
+    def __call__(self, environ, start_response):
+        """Handle WSGI Request."""
+        with clear(threadlocal.default()) as context:
+            assert context == {}, "New thread context was not empty."
+            self.populate_context(context, environ)
+            environ['context'] = context
+            resp = self.app(
+                environ,
+                self.start_response_callback(start_response,
+                                             context['transaction_id']))
+            return resp
 
     @staticmethod
     def start_response_callback(start_response, transaction_id):
@@ -90,3 +102,11 @@ class ContextMiddleware(object):  # pylint: disable=R0903
             # Call upstream start_response
             start_response(status, headers, exc_info)
         return callback
+
+
+@contextlib.contextmanager
+def clear(local_dict):
+    """Context manager that clears objects when done."""
+    yield local_dict
+    LOG.debug("Clearing local context %s", id(local_dict))
+    local_dict.clear()
