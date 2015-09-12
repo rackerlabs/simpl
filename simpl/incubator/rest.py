@@ -169,7 +169,7 @@ def schema(body_schema=None, body_required=False, query_schema=None,
                         raise MultiValidationError(exc.errors)
 
                 # validate the query string per the schema (if application):
-                query = bottle.request.query.dict
+                query = dict(bottle.request.query)
                 if query_schema is not None:
                     try:
                         query = query_schema(query)
