@@ -430,5 +430,63 @@ initialization (metaconfig) arguments:
 """
         self.assertEqual(mock_stdout.getvalue(), expected)
 
+
+class TestConfigPrecedence(unittest.TestCase):
+
+    def setUp(self):
+        self.opts = [
+            config.Option(
+                '--foo',
+                required=True,
+                default='bar',
+                env='FOO',
+            ),
+            config.Option(
+                '--blarg',
+                required=True,
+                default='baz',
+                env='BLARG',
+            ),
+        ]
+
+        self.conf = config.Config(
+            options=self.opts,
+            prog='test',
+        )
+
+    @mock.patch.dict(config.os.environ, {})
+    def test_case_1(self):
+        # Test that defaults are used if no env or cli source of the option are
+        # present.
+        res = self.conf.parse(argv=['test.py'])
+        self.assertEqual(res.foo, 'bar')
+        self.assertEqual(res.blarg, 'baz')
+
+    @mock.patch.dict(config.os.environ, {})
+    def test_case_2(self):
+        # Test that cli args override the defaults.
+        res = self.conf.parse(argv=['test.py', '--foo', 'fromcli'])
+        self.assertEqual(res.foo, 'fromcli')
+        self.assertEqual(res.blarg, 'baz')
+
+    @mock.patch.dict(config.os.environ, {'FOO': 'fromenv'})
+    def test_case_3(self):
+        # Test that defaults are overridden by the environment
+        # _if_ the env var is present.
+        res = self.conf.parse(argv=['test.py'])
+        self.assertEqual(res.foo, 'fromenv')
+        # Option --blarg can also be set by the envvar BLARG, but it is not
+        # present. Thus, we expect to get the default again:
+        self.assertEqual(res.blarg, 'baz')
+
+    @mock.patch.dict(config.os.environ, {'FOO': 'fromenv'})
+    def test_case_4(self):
+        # Similar to above, but now the cli args will override both the
+        # default and then the env (in that order).
+        res = self.conf.parse(argv=['test.py', '--foo', 'fromcli'])
+        self.assertEqual(res.foo, 'fromcli')
+        self.assertEqual(res.blarg, 'baz')
+
+
 if __name__ == '__main__':
     unittest.main()

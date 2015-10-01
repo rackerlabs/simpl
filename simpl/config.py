@@ -477,8 +477,15 @@ class Config(collections.MutableMapping):
         options = []
         for option in self._options:
             kwargs = option.kwargs.copy()
-            if kwargs.get('default') is None:
+            original_default = kwargs.get('default')
+            if original_default is not None:
                 kwargs['default'] = argparse.SUPPRESS
+                # Since we're suppressing defaults, we need to somehow preserve
+                # the default value for the help text:
+                help_text = kwargs.get('help', '')
+                kwargs['help'] = '%s (default: %s)' % (
+                    help_text, original_default
+                )
             temp = Option(*option.args, **kwargs)
             options.append(temp)
         parser = self.build_parser(options, permissive=permissive)
@@ -615,11 +622,18 @@ class Config(collections.MutableMapping):
         secrets = self.parse_keyring(keyring_namespace)
         ini = self.parse_ini()
 
+        drop_nones = lambda d: {key: value for key, value in d.items()
+                                if value is not None}
+        # NOTE(larsbutler): We want to filter out nones, so that options with a
+        # None value at a higher precedence do not override values with a
+        # non-None value at a lower precedence. For example, if the defaults
+        # define a value for the option `foo`, and `args` contains `foo=None`,
+        # the `args` should override the default.
         results = defaults
-        results.update(ini)
-        results.update(secrets)
-        results.update(env)
-        results.update(args)
+        results.update(drop_nones(ini))
+        results.update(drop_nones(secrets))
+        results.update(drop_nones(env))
+        results.update(drop_nones(args))
         return results
 
     def parse(self, argv=None, keyring_namespace=None, strict=False):
