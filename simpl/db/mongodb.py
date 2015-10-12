@@ -631,3 +631,18 @@ def database(connection_string, db_class=SimplDB):
         instance = db_class(connection_string)
         database.singletons[connection_string] = instance
     return database.singletons[connection_string]
+
+
+def params_to_mongo(query_params):
+    """Convert HTTP query params to mongodb query syntax.
+
+    Converts the parse query params into a mongodb spec.
+
+    :param dict query_params: return of func:`rest.process_params`
+    """
+    if not query_params:
+        return {}
+    for key, value in query_params.items():
+        if isinstance(value, list):
+            query_params[key] = {'$in': value}
+    return query_params

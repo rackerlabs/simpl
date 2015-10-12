@@ -399,5 +399,23 @@ class TestMongoDBCapabilities(unittest.TestCase):
         )
         self.assertIsNone(obj)
 
+
+class TestParamQueries(unittest.TestCase):
+
+    """Test Query Param Parsing."""
+
+    def test_blank(self):
+        self.assertEqual(mongodb.params_to_mongo(None), {})
+        self.assertEqual(mongodb.params_to_mongo({}), {})
+        self.assertEqual(mongodb.params_to_mongo([]), {})
+
+    def test_or(self):
+        statuses = ['good', 'bad']
+        params = {
+            'status': statuses
+        }
+        converted = mongodb.params_to_mongo(params)
+        self.assertEqual(converted['status'], {'$in': statuses})
+
 if __name__ == '__main__':
     unittest.main()
