@@ -29,7 +29,7 @@ __summary__ = ('simpl is a collection of useful, '
                'common python libraries, primarily '
                'for building web services and APIs')
 __url__ = 'https://github.com/checkmate/simpl'
-__version__ = '0.6.2'
+__version__ = '0.6.3'
 __author__ = 'Rackers'
 __email__ = 'samuel.stavinoha@rackspace.com'
 __keywords__ = ['common', 'resuable', 'suitable', 'fruitful']
