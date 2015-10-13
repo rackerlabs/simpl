@@ -70,7 +70,10 @@ try:
     import eventlet
 except ImportError:
     pass
-import mongo_proxy
+try:
+    import mongo_proxy
+except ImportError:
+    mongo_proxy = None
 import pymongo
 from pymongo.son_manipulator import SONManipulator
 
@@ -241,25 +244,31 @@ class SimplDB(object):
         else:
             self.tune()
 
+    def _set_client(self):
+        """Set client property if not set."""
+        if self._client is None:
+            if mongo_proxy:
+                self._client = mongo_proxy.MongoProxy(
+                    pymongo.MongoClient(self.connection_string),
+                    logger=LOG)
+            else:
+                LOG.warning("MongoDBProxy not imported. AutoReconnect "
+                            "is not enabled.")
+                self._client = mongo_proxy.MongoProxy(
+                    pymongo.MongoClient(self.connection_string),
+                    logger=LOG)
+            LOG.debug("Created new connection to MongoDB: %s",
+                      self.safe_connection_string)
+
     @property
     def client(self):
         """Return a lazy-instantiated pymongo client."""
         if eventlet:
             block = eventlet.semaphore.Semaphore(id(self))
             with block:
-                if self._client is None:
-                    self._client = mongo_proxy.MongoProxy(
-                        pymongo.MongoClient(self.connection_string),
-                        logger=LOG)
-                    LOG.debug("Created new connection to MongoDB: %s",
-                              self.safe_connection_string)
+                self._set_client()
         else:
-            if self._client is None:
-                self._client = mongo_proxy.MongoProxy(
-                    pymongo.MongoClient(self.connection_string),
-                    logger=LOG)
-                LOG.debug("Created new connection to MongoDB: %s",
-                          self.safe_connection_string)
+            self._set_client()
         return self._client
 
     @property
