@@ -19,6 +19,7 @@ import unittest
 import bottle
 import mock
 import six
+import voluptuous as volup
 
 from simpl import rest
 import webtest
@@ -28,8 +29,11 @@ class TestBodyDecorator(unittest.TestCase):
 
     """Tests for :func:`simpl.rest.body`."""
 
-    def test_decoration(self):
+    @mock.patch.object(rest.bottle, 'request')
+    def test_decoration(self, mock_request):
         """Test decorated function is called."""
+        mock_request.json = None
+        mock_request.content_type = 'application/json'
         mock_handler = mock.Mock(return_value='X')
         decorated = rest.body()(mock_handler)
         self.assertTrue(callable(decorated))
@@ -41,6 +45,7 @@ class TestBodyDecorator(unittest.TestCase):
         """Test schema callable is called."""
         data = "100"
         mock_request.json = data
+        mock_request.content_type = 'application/json'
         mock_handler = mock.Mock()
         route = rest.body(schema=int)(mock_handler)
         route()
@@ -50,6 +55,7 @@ class TestBodyDecorator(unittest.TestCase):
     def test_schema_fail(self, mock_request):
         """Test schema is enforced."""
         mock_request.json = 'ALPHA'
+        mock_request.content_type = 'application/json'
         mock_handler = mock.Mock()
         route = rest.body(schema=int)(mock_handler)
         with self.assertRaises(bottle.HTTPError):
@@ -59,6 +65,7 @@ class TestBodyDecorator(unittest.TestCase):
     def test_required(self, mock_request):
         """Test required is enforced."""
         mock_request.json = None
+        mock_request.content_type = 'application/json'
         mock_handler = mock.Mock()
         route = rest.body(required=True)(mock_handler)
         with self.assertRaises(bottle.HTTPError) as context:
@@ -69,10 +76,28 @@ class TestBodyDecorator(unittest.TestCase):
     def test_default(self, mock_request):
         """Test default is returned (and schema is applied to it)."""
         mock_request.json = None
+        mock_request.content_type = 'application/json'
         mock_handler = mock.Mock()
         route = rest.body(default='100', schema=int)(mock_handler)
         route()
         mock_handler.assert_called_once_with(100)
+
+    @mock.patch.object(rest.bottle, 'request')
+    def test_unexpected_content_type(self, mock_request):
+        mock_request.json = {'foo': 3}
+        mock_request.content_type = 'text/html'
+        mock_handler = mock.Mock()
+        route = rest.body(schema=volup.Schema({'foo': int}))(
+            mock_handler
+        )
+        with self.assertRaises(bottle.HTTPError) as context:
+            route()
+        expected_msg = (
+            "Unexpected Content-Type 'text/html'. Supported Content-Types: "
+            "['application/json']"
+        )
+        self.assertEqual(context.exception.body, expected_msg)
+
 
 
 class TestRangeResponse(unittest.TestCase):
