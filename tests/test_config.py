@@ -48,8 +48,17 @@ class TestConverters(unittest.TestCase):
         result = config.comma_separated_pairs("A=1,B=2,C=3")
         self.assertEqual(result, expected)
 
+    def test_read_from(self):
+        # TODO(zns): need to add this test
+        pass
 
+    def test_normalized_path(self):
+        # TODO(zns): need to add this test
+        pass
 
+    def parse_key_format(self):
+        # TODO(zns): need to add this test
+        pass
 
 
 @mock.patch.object(config.warnings, 'warn', mock.Mock())  # less noise in tests
@@ -96,6 +105,15 @@ class TestParsers(unittest.TestCase):
         self.assertEqual(
             self.conf.parse_env(),
             {'required': 'ENV2'})
+
+    def test_ini_parser(self):
+        # TODO(zns): need to add this test
+        pass
+
+    def test_keyring_parser(self):
+        # TODO(zns): need to add this test
+        pass
+
 
 @mock.patch.object(config.warnings, 'warn', mock.Mock())  # less noise in tests
 class TestConfig(unittest.TestCase):
@@ -456,7 +474,7 @@ class TestConfig(unittest.TestCase):
 
     @mock.patch('sys.stdout', new_callable=six.StringIO)
     def test_default_help_formatter(self, mock_stdout):
-        """Default Belp Formatter Still Works."""
+        """Default Help Formatter Still Works."""
         OPTS = [
             config.Option(
                 '--host',
@@ -474,18 +492,18 @@ class TestConfig(unittest.TestCase):
             conf.parse(argv=['test.py', '-h'])
         except SystemExit:
             pass
-        expected = """\
-usage: test [-h] [--ini PATH] [--host HOST]
+        expected = textwrap.dedent("""\
+        usage: test [-h] [--ini PATH] [--host HOST]
 
-optional arguments:
-  -h, --help   show this help message and exit
-  --host HOST  Server address. (default: 127.0.0.1)
+        optional arguments:
+          -h, --help   show this help message and exit
+          --host HOST  Server address. (default: 127.0.0.1)
 
-initialization (metaconfig) arguments:
-  evaluated first and can be used to source an entire config
+        initialization (metaconfig) arguments:
+          evaluated first and can be used to source an entire config
 
-  --ini PATH   Source some or all of the options from this ini file.
-"""
+          --ini PATH   Source some or all of the options from this ini file.
+        """)
         self.assertEqual(mock_stdout.getvalue(), expected)
 
 

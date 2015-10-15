@@ -290,7 +290,7 @@ class Option(object):
                 if mutually_exclusive:
                     if not required:
                         required = kwargs.pop('required', None)
-                    mutexg_title = ('%s mutually-exclusive-group' % groupname)
+                    mutexg_title = '%s mutually-exclusive-group' % groupname
                     exists = [grp for grp in group._mutually_exclusive_groups
                               if grp.title == mutexg_title]
                     if exists:
@@ -714,18 +714,11 @@ class Config(collections.MutableMapping):
         secrets = self.parse_keyring(keyring_namespace)
         ini = self.parse_ini()
 
-        drop_nones = lambda d: {key: value for key, value in d.items()
-                                if value is not None}
-        # NOTE(larsbutler): We want to filter out nones, so that options with a
-        # None value at a higher precedence do not override values with a
-        # non-None value at a lower precedence. For example, if the defaults
-        # define a value for the option `foo`, and `args` contains `foo=None`,
-        # the `args` should override the default.
         results = defaults
-        results.update(drop_nones(ini))
-        results.update(drop_nones(secrets))
-        results.update(drop_nones(env))
-        results.update(drop_nones(args))
+        results.update(ini)
+        results.update(secrets)
+        results.update(env)
+        results.update(args)
         return results
 
     def parse(self, argv=None, keyring_namespace=None, strict=False):
@@ -976,7 +969,6 @@ def main():  # pragma: no cover
     if len(sys.argv) == 1:
         sys.argv.append('--help')
     myconf.parse()
-    print(myconf)
 
 if __name__ == '__main__':  # pragma: no cover
     main()
