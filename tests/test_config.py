@@ -171,6 +171,13 @@ class TestConfig(unittest.TestCase):
         ])
         cfg.parse(['prog', '--foo'], strict=False)
 
+    def test_pass_thru(self):
+        cfg = config.Config(options=[
+            config.Option('--one', default=1),
+        ])
+        cfg.parse(['prog', '--one=1', '--',  '--pt'], strict=True)
+        self.assertEqual(cfg.pass_thru_args, ['--pt'])
+
     @mock.patch.dict('os.environ', {'TEST_TWO': '2'})
     def test_required(self):
         self.assertEqual(os.environ['TEST_TWO'], '2')

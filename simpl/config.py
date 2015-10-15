@@ -484,7 +484,16 @@ class Config(collections.MutableMapping):
             kwargs['required'] = False
             options.append(Option(*option.args, **kwargs))
         parser = self.build_parser(options, add_help=False)
-        parsed, _ = parser.parse_known_args(argv[1:] if argv else [])
+        parsed, extras = parser.parse_known_args(argv[1:] if argv else [])
+        if extras and argv:
+            valid, pass_thru = self.parse_passthru_args(argv[1:])
+            parsed, extras = parser.parse_known_args(valid)
+            self.pass_thru_args = pass_thru + extras
+        else:
+            # maybe reset pass_thru_args on subsequent calls
+            # parse() -> cli_values() is called post-plugin-init
+            self.pass_thru_args = []
+
         return {k: v for k, v in vars(parsed).items() if v is not None}
 
     def validate_config(self, values, argv=None, strict=False):
