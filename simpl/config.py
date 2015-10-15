@@ -466,6 +466,26 @@ class Config(collections.MutableMapping):
                 option.add_argument(parser, permissive=permissive)
         return parser
 
+    def cli_values(self, argv):
+        """Parse command-line arguments into values.
+
+        Parses arguments provided on the command-line (or sys.argv). Only
+        returns arguments that are explicitly supplied, so we strip out
+        defaults and validation rules like `required` in this call.
+        """
+        options = []
+        for option in self._options:
+            kwargs = option.kwargs.copy()
+            # Must explicitly set default to None or `store_true` and
+            # `store_false` actions will set the value to true or false,
+            # respectively.
+            kwargs['default'] = None
+            kwargs['required'] = False
+            options.append(Option(*option.args, **kwargs))
+        parser = self.build_parser(options, add_help=False)
+        parsed, _ = parser.parse_known_args(argv[1:] if argv else [])
+        return {k: v for k, v in vars(parsed).items() if v is not None}
+
     def parse_cli(self, argv=None, permissive=False):
         """Parse command-line arguments into values.
 
@@ -531,7 +551,7 @@ class Config(collections.MutableMapping):
                 del opt.kwargs['required']
             except KeyError:
                 pass
-        parser = self.build_parser(options, permissive=True)
+        parser = self.build_parser(options, permissive=True, add_help=False)
         parsed, _ = parser.parse_known_args([])
         return vars(parsed)
 
@@ -617,7 +637,7 @@ class Config(collections.MutableMapping):
     def load_options(self, argv=None, keyring_namespace=None, permissive=True):
         """Find settings from all sources."""
         defaults = self.get_defaults()
-        args = self.parse_cli(argv=argv, permissive=permissive)
+        args = self.cli_values(argv=argv)
         env = self.parse_env()
         secrets = self.parse_keyring(keyring_namespace)
         ini = self.parse_ini()
@@ -643,6 +663,8 @@ class Config(collections.MutableMapping):
         :raises: SystemExit if invalid arguments supplied along with stdout
             message (same as argparser).
         """
+        if argv is None:
+            argv = self._argv or sys.argv
         results = self.load_options(argv=argv,
                                     keyring_namespace=keyring_namespace,
                                     permissive=not strict)

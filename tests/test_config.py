@@ -21,6 +21,7 @@ import argparse
 import copy
 import errno
 import os
+import shlex
 import sys
 import tempfile
 import textwrap
@@ -33,7 +34,9 @@ from simpl import config
 from simpl import exceptions as simpl_exceptions
 
 
-class TestParsers(unittest.TestCase):
+class TestConverters(unittest.TestCase):
+
+    """Test functions that convert/coerce incoming config values."""
 
     def test_comma_separated_strings(self):
         expected = ['1', '2', '3']
@@ -45,6 +48,53 @@ class TestParsers(unittest.TestCase):
         result = config.comma_separated_pairs("A=1,B=2,C=3")
         self.assertEqual(result, expected)
 
+
+
+
+
+class TestParsers(unittest.TestCase):
+
+    """Test Config Source Parsers.
+
+    Tests the code that reads config values from sources such as command-line,
+    environment, keyring, etc...
+    """
+
+    def setUp(self):
+        self.opts = [
+            config.Option(
+                '-r', '--required',
+                required=True,
+                default='req',
+                env='REQUIRED',
+            ),
+            config.Option(
+                '--bool',
+                action='store_true',
+            ),
+        ]
+
+        self.conf = config.Config(
+            options=self.opts,
+            prog='test',
+        )
+
+    def test_cli_parser(self):
+        self.assertEqual(
+            self.conf.cli_values(shlex.split('test -r short --bool')),
+            {'required': 'short', 'bool': True})
+        self.assertEqual(
+            self.conf.cli_values(shlex.split('test --required long')),
+            {'required': 'long'})
+        self.assertEqual(
+            self.conf.cli_values(shlex.split('test')),
+            {})
+
+    @mock.patch.dict('os.environ', {'TEST_REQUIRED': 'ENV2'})
+    def test_env_parser(self):
+        self.assertEqual(
+            self.conf.parse_env(),
+            {'required': 'ENV2'})
 
 class TestConfig(unittest.TestCase):
 
