@@ -405,7 +405,7 @@ class Config(collections.MutableMapping):
         self._parser_kwargs.setdefault('parents', [])
         self._parser_kwargs['parents'].append(metaparser)
         self._metaconf._values = self._metaconf.load_options(
-            argv=argv, permissive=True)
+            argv=argv)
         self._metaconf.provision(self)
 
     @staticmethod
@@ -485,6 +485,69 @@ class Config(collections.MutableMapping):
         parser = self.build_parser(options, add_help=False)
         parsed, _ = parser.parse_known_args(argv[1:] if argv else [])
         return {k: v for k, v in vars(parsed).items() if v is not None}
+
+    def validate_config(self, values, argv=None, strict=False):
+        """Validate all config values through the command-line parser.
+
+        This takes all supplied options (which could have been retrieved from a
+        number of sources (such as CLI, env vars, etc...) and then validates
+        them by running them through argparser (and raises SystemExit on
+        failure).
+
+        :returns dict: key/values for all config values (from all sources)
+        :raises: SystemExit
+        """
+        options = []
+        for option in self._options:
+            kwargs = option.kwargs.copy()
+            if option.name in values:
+                if 'default' in kwargs:
+                    # Since we're overriding defaults, we need to
+                    # preserve the default value for the help text:
+                    help_text = kwargs.get('help')
+                    if help_text:
+                        if '(default: ' not in help_text:
+                            kwargs['help'] = '%s (default: %s)' % (
+                                help_text, kwargs['default']
+                            )
+                kwargs['default'] = values[option.name]
+                kwargs['required'] = False  # since we have a value
+            temp = Option(*option.args, **kwargs)
+            options.append(temp)
+        parser = self.build_parser(options,
+                                   formatter_class=argparse.HelpFormatter)
+        if argv:
+            parsed, extras = parser.parse_known_args(argv[1:])
+            if extras:
+                valid, _ = self.parse_passthru_args(argv[1:])
+                parsed, extras = parser.parse_known_args(valid)
+                if extras and strict:  # still
+                    self.build_parser(options)
+                    parser.parse_args(argv[1:])
+        else:
+            parsed = parser.parse_args([])
+
+        results = vars(parsed)
+        raise_for_group = {}
+        for option in self._options:
+            if option.kwargs.get('required'):
+                if option.dest not in results or results[option.dest] is None:
+                    if getattr(option, '_mutexgroup', None):
+                        raise_for_group.setdefault(option._mutexgroup, [])
+                        raise_for_group[option._mutexgroup].append(
+                            option._action)
+                    else:
+                        raise SystemExit("'%s' is required. See --help "
+                                         "for more info." % option.name)
+                else:
+                    if getattr(option, '_mutexgroup', None):
+                        raise_for_group.pop(option._mutexgroup, None)
+        if raise_for_group:
+            optstrings = [str(k.option_strings)
+                          for k in raise_for_group.values()[0]]
+            msg = "One of %s required. " % " ,".join(optstrings)
+            raise SystemExit(msg + "See --help for more info.")
+        return results
 
     def parse_cli(self, argv=None, permissive=False):
         """Parse command-line arguments into values.
@@ -634,8 +697,13 @@ class Config(collections.MutableMapping):
                 results[option.dest] = option.type(secret)
         return results
 
-    def load_options(self, argv=None, keyring_namespace=None, permissive=True):
-        """Find settings from all sources."""
+    def load_options(self, argv=None, keyring_namespace=None):
+        """Find settings from all sources.
+
+        Only performs data type validation. Does not perform validation on
+        required, extra/unknown, or mutually exclusive options. To perform that
+        call `validate_config`.
+        """
         defaults = self.get_defaults()
         args = self.cli_values(argv=argv)
         env = self.parse_env()
@@ -659,6 +727,7 @@ class Config(collections.MutableMapping):
     def parse(self, argv=None, keyring_namespace=None, strict=False):
         """Find settings from all sources.
 
+        :keyword strict: fail if unknown args are passed in.
         :returns: dict of parsed option name and values
         :raises: SystemExit if invalid arguments supplied along with stdout
             message (same as argparser).
@@ -666,28 +735,9 @@ class Config(collections.MutableMapping):
         if argv is None:
             argv = self._argv or sys.argv
         results = self.load_options(argv=argv,
-                                    keyring_namespace=keyring_namespace,
-                                    permissive=not strict)
+                                    keyring_namespace=keyring_namespace)
         # Run validation
-        raise_for_group = {}
-        for option in self._options:
-            if option.kwargs.get('required'):
-                if option.dest not in results or results[option.dest] is None:
-                    if getattr(option, '_mutexgroup', None):
-                        raise_for_group.setdefault(option._mutexgroup, [])
-                        raise_for_group[option._mutexgroup].append(
-                            option._action)
-                    else:
-                        raise SystemExit("'%s' is required. See --help "
-                                         "for more info." % option.name)
-                else:
-                    if getattr(option, '_mutexgroup', None):
-                        raise_for_group.pop(option._mutexgroup, None)
-        if raise_for_group:
-            optstrings = [str(k.option_strings)
-                          for k in raise_for_group.values()[0]]
-            msg = "One of %s required. " % " ,".join(optstrings)
-            raise SystemExit(msg + "See --help for more info.")
+        results = self.validate_config(results, argv=argv, strict=strict)
         self._values = results
         return self
 

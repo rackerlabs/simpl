@@ -145,6 +145,12 @@ class TestConfig(unittest.TestCase):
         with self.assertRaises(SystemExit):
             cfg.parse(['prog', '--foo'], strict=True)
 
+    def test_not_strict(self):
+        cfg = config.Config(options=[
+            config.Option('--one', default=1),
+        ])
+        cfg.parse(['prog', '--foo'], strict=False)
+
     @mock.patch.dict('os.environ', {'TEST_TWO': '2'})
     def test_required(self):
         self.assertEqual(os.environ['TEST_TWO'], '2')
