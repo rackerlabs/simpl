@@ -98,7 +98,7 @@ Example test.py file:
         print conf
 
         # advanced usage
-        cli_args = conf.parse_cli(argv=argv)
+        cli_args = conf.cli_values(argv)
         env = conf.parse_env()
         secrets = conf.parse_keyring(namespace="app")
         ini = conf.parse_ini(ini_file_paths)
@@ -169,6 +169,7 @@ import errno
 import logging
 import os
 import sys
+import warnings
 
 import simpl.exceptions
 
@@ -555,6 +556,9 @@ class Config(collections.MutableMapping):
         :keyword permissive: when true, does not validate required or extra
             arguments.
         """
+        warnings.warn("Calling `parse_cli` directly is deprecated. It will be "
+                      "removed in v0.8.0. Call `cli_values` and/or "
+                      "`validate_config` instead.", DeprecationWarning)
         if argv is None:
             argv = self._argv or sys.argv
         options = []
@@ -582,7 +586,7 @@ class Config(collections.MutableMapping):
             self.pass_thru_args = pass_thru + extras
         else:
             # maybe reset pass_thru_args on subsequent calls
-            # parse() -> parse_cli() is called post-plugin-init
+            # parse() -> cli_values() is called post-plugin-init
             self.pass_thru_args = []
         return vars(parsed)
 

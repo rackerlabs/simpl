@@ -52,6 +52,7 @@ class TestConverters(unittest.TestCase):
 
 
 
+@mock.patch.object(config.warnings, 'warn', mock.Mock())  # less noise in tests
 class TestParsers(unittest.TestCase):
 
     """Test Config Source Parsers.
@@ -96,6 +97,7 @@ class TestParsers(unittest.TestCase):
             self.conf.parse_env(),
             {'required': 'ENV2'})
 
+@mock.patch.object(config.warnings, 'warn', mock.Mock())  # less noise in tests
 class TestConfig(unittest.TestCase):
 
     def get_tempfile(self, *args, **kwargs):
@@ -487,6 +489,7 @@ initialization (metaconfig) arguments:
         self.assertEqual(mock_stdout.getvalue(), expected)
 
 
+@mock.patch.object(config.warnings, 'warn', mock.Mock())  # less noise in tests
 class TestConfigPrecedence(unittest.TestCase):
 
     def setUp(self):
