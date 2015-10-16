@@ -74,7 +74,7 @@ def main(argv):
     conf.parse()
     print conf
     # advanced usage
-    cli_args = conf.parse_cli(argv=argv)
+    cli_args = conf.cli_values(argv=argv)
     env = conf.parse_env()
     secrets = conf.parse_keyring(namespace="app")
     ini = conf.parse_ini(ini_file_paths)

@@ -98,7 +98,7 @@ Example test.py file:
         print conf
 
         # advanced usage
-        cli_args = conf.parse_cli(argv=argv)
+        cli_args = conf.cli_values(argv)
         env = conf.parse_env()
         secrets = conf.parse_keyring(namespace="app")
         ini = conf.parse_ini(ini_file_paths)
@@ -169,6 +169,7 @@ import errno
 import logging
 import os
 import sys
+import warnings
 
 import simpl.exceptions
 
@@ -289,7 +290,7 @@ class Option(object):
                 if mutually_exclusive:
                     if not required:
                         required = kwargs.pop('required', None)
-                    mutexg_title = ('%s mutually-exclusive-group' % groupname)
+                    mutexg_title = '%s mutually-exclusive-group' % groupname
                     exists = [grp for grp in group._mutually_exclusive_groups
                               if grp.title == mutexg_title]
                     if exists:
@@ -405,7 +406,7 @@ class Config(collections.MutableMapping):
         self._parser_kwargs.setdefault('parents', [])
         self._parser_kwargs['parents'].append(metaparser)
         self._metaconf._values = self._metaconf.load_options(
-            argv=argv, permissive=True)
+            argv=argv)
         self._metaconf.provision(self)
 
     @staticmethod
@@ -466,12 +467,107 @@ class Config(collections.MutableMapping):
                 option.add_argument(parser, permissive=permissive)
         return parser
 
+    def cli_values(self, argv):
+        """Parse command-line arguments into values.
+
+        Parses arguments provided on the command-line (or sys.argv). Only
+        returns arguments that are explicitly supplied, so we strip out
+        defaults and validation rules like `required` in this call.
+        """
+        options = []
+        for option in self._options:
+            kwargs = option.kwargs.copy()
+            # Must explicitly set default to None or `store_true` and
+            # `store_false` actions will set the value to true or false,
+            # respectively.
+            kwargs['default'] = None
+            kwargs['required'] = False
+            options.append(Option(*option.args, **kwargs))
+        parser = self.build_parser(options, add_help=False)
+        parsed, extras = parser.parse_known_args(argv[1:] if argv else [])
+        if extras and argv:
+            valid, pass_thru = self.parse_passthru_args(argv[1:])
+            parsed, extras = parser.parse_known_args(valid)
+            self.pass_thru_args = pass_thru + extras
+        else:
+            # maybe reset pass_thru_args on subsequent calls
+            # parse() -> cli_values() is called post-plugin-init
+            self.pass_thru_args = []
+
+        return {k: v for k, v in vars(parsed).items() if v is not None}
+
+    def validate_config(self, values, argv=None, strict=False):
+        """Validate all config values through the command-line parser.
+
+        This takes all supplied options (which could have been retrieved from a
+        number of sources (such as CLI, env vars, etc...) and then validates
+        them by running them through argparser (and raises SystemExit on
+        failure).
+
+        :returns dict: key/values for all config values (from all sources)
+        :raises: SystemExit
+        """
+        options = []
+        for option in self._options:
+            kwargs = option.kwargs.copy()
+            if option.name in values:
+                if 'default' in kwargs:
+                    # Since we're overriding defaults, we need to
+                    # preserve the default value for the help text:
+                    help_text = kwargs.get('help')
+                    if help_text:
+                        if '(default: ' not in help_text:
+                            kwargs['help'] = '%s (default: %s)' % (
+                                help_text, kwargs['default']
+                            )
+                kwargs['default'] = values[option.name]
+                kwargs['required'] = False  # since we have a value
+            temp = Option(*option.args, **kwargs)
+            options.append(temp)
+        parser = self.build_parser(options,
+                                   formatter_class=argparse.HelpFormatter)
+        if argv:
+            parsed, extras = parser.parse_known_args(argv[1:])
+            if extras:
+                valid, _ = self.parse_passthru_args(argv[1:])
+                parsed, extras = parser.parse_known_args(valid)
+                if extras and strict:  # still
+                    self.build_parser(options)
+                    parser.parse_args(argv[1:])
+        else:
+            parsed = parser.parse_args([])
+
+        results = vars(parsed)
+        raise_for_group = {}
+        for option in self._options:
+            if option.kwargs.get('required'):
+                if option.dest not in results or results[option.dest] is None:
+                    if getattr(option, '_mutexgroup', None):
+                        raise_for_group.setdefault(option._mutexgroup, [])
+                        raise_for_group[option._mutexgroup].append(
+                            option._action)
+                    else:
+                        raise SystemExit("'%s' is required. See --help "
+                                         "for more info." % option.name)
+                else:
+                    if getattr(option, '_mutexgroup', None):
+                        raise_for_group.pop(option._mutexgroup, None)
+        if raise_for_group:
+            optstrings = [str(k.option_strings)
+                          for k in raise_for_group.values()[0]]
+            msg = "One of %s required. " % " ,".join(optstrings)
+            raise SystemExit(msg + "See --help for more info.")
+        return results
+
     def parse_cli(self, argv=None, permissive=False):
         """Parse command-line arguments into values.
 
         :keyword permissive: when true, does not validate required or extra
             arguments.
         """
+        warnings.warn("Calling `parse_cli` directly is deprecated. It will be "
+                      "removed in v0.8.0. Call `cli_values` and/or "
+                      "`validate_config` instead.", DeprecationWarning)
         if argv is None:
             argv = self._argv or sys.argv
         options = []
@@ -499,7 +595,7 @@ class Config(collections.MutableMapping):
             self.pass_thru_args = pass_thru + extras
         else:
             # maybe reset pass_thru_args on subsequent calls
-            # parse() -> parse_cli() is called post-plugin-init
+            # parse() -> cli_values() is called post-plugin-init
             self.pass_thru_args = []
         return vars(parsed)
 
@@ -531,7 +627,7 @@ class Config(collections.MutableMapping):
                 del opt.kwargs['required']
             except KeyError:
                 pass
-        parser = self.build_parser(options, permissive=True)
+        parser = self.build_parser(options, permissive=True, add_help=False)
         parsed, _ = parser.parse_known_args([])
         return vars(parsed)
 
@@ -614,58 +710,40 @@ class Config(collections.MutableMapping):
                 results[option.dest] = option.type(secret)
         return results
 
-    def load_options(self, argv=None, keyring_namespace=None, permissive=True):
-        """Find settings from all sources."""
+    def load_options(self, argv=None, keyring_namespace=None):
+        """Find settings from all sources.
+
+        Only performs data type validation. Does not perform validation on
+        required, extra/unknown, or mutually exclusive options. To perform that
+        call `validate_config`.
+        """
         defaults = self.get_defaults()
-        args = self.parse_cli(argv=argv, permissive=permissive)
+        args = self.cli_values(argv=argv)
         env = self.parse_env()
         secrets = self.parse_keyring(keyring_namespace)
         ini = self.parse_ini()
 
-        drop_nones = lambda d: {key: value for key, value in d.items()
-                                if value is not None}
-        # NOTE(larsbutler): We want to filter out nones, so that options with a
-        # None value at a higher precedence do not override values with a
-        # non-None value at a lower precedence. For example, if the defaults
-        # define a value for the option `foo`, and `args` contains `foo=None`,
-        # the `args` should override the default.
         results = defaults
-        results.update(drop_nones(ini))
-        results.update(drop_nones(secrets))
-        results.update(drop_nones(env))
-        results.update(drop_nones(args))
+        results.update(ini)
+        results.update(secrets)
+        results.update(env)
+        results.update(args)
         return results
 
     def parse(self, argv=None, keyring_namespace=None, strict=False):
         """Find settings from all sources.
 
+        :keyword strict: fail if unknown args are passed in.
         :returns: dict of parsed option name and values
         :raises: SystemExit if invalid arguments supplied along with stdout
             message (same as argparser).
         """
+        if argv is None:
+            argv = self._argv or sys.argv
         results = self.load_options(argv=argv,
-                                    keyring_namespace=keyring_namespace,
-                                    permissive=not strict)
+                                    keyring_namespace=keyring_namespace)
         # Run validation
-        raise_for_group = {}
-        for option in self._options:
-            if option.kwargs.get('required'):
-                if option.dest not in results or results[option.dest] is None:
-                    if getattr(option, '_mutexgroup', None):
-                        raise_for_group.setdefault(option._mutexgroup, [])
-                        raise_for_group[option._mutexgroup].append(
-                            option._action)
-                    else:
-                        raise SystemExit("'%s' is required. See --help "
-                                         "for more info." % option.name)
-                else:
-                    if getattr(option, '_mutexgroup', None):
-                        raise_for_group.pop(option._mutexgroup, None)
-        if raise_for_group:
-            optstrings = [str(k.option_strings)
-                          for k in raise_for_group.values()[0]]
-            msg = "One of %s required. " % " ,".join(optstrings)
-            raise SystemExit(msg + "See --help for more info.")
+        results = self.validate_config(results, argv=argv, strict=strict)
         self._values = results
         return self
 
@@ -900,7 +978,6 @@ def main():  # pragma: no cover
     if len(sys.argv) == 1:
         sys.argv.append('--help')
     myconf.parse()
-    print(myconf)
 
 if __name__ == '__main__':  # pragma: no cover
     main()

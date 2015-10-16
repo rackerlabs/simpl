@@ -21,6 +21,7 @@ import argparse
 import copy
 import errno
 import os
+import shlex
 import sys
 import tempfile
 import textwrap
@@ -33,7 +34,9 @@ from simpl import config
 from simpl import exceptions as simpl_exceptions
 
 
-class TestParsers(unittest.TestCase):
+class TestConverters(unittest.TestCase):
+
+    """Test functions that convert/coerce incoming config values."""
 
     def test_comma_separated_strings(self):
         expected = ['1', '2', '3']
@@ -45,7 +48,74 @@ class TestParsers(unittest.TestCase):
         result = config.comma_separated_pairs("A=1,B=2,C=3")
         self.assertEqual(result, expected)
 
+    def test_read_from(self):
+        # TODO(zns): need to add this test
+        pass
 
+    def test_normalized_path(self):
+        # TODO(zns): need to add this test
+        pass
+
+    def parse_key_format(self):
+        # TODO(zns): need to add this test
+        pass
+
+
+@mock.patch.object(config.warnings, 'warn', mock.Mock())  # less noise in tests
+class TestParsers(unittest.TestCase):
+
+    """Test Config Source Parsers.
+
+    Tests the code that reads config values from sources such as command-line,
+    environment, keyring, etc...
+    """
+
+    def setUp(self):
+        self.opts = [
+            config.Option(
+                '-r', '--required',
+                required=True,
+                default='req',
+                env='REQUIRED',
+            ),
+            config.Option(
+                '--bool',
+                action='store_true',
+            ),
+        ]
+
+        self.conf = config.Config(
+            options=self.opts,
+            prog='test',
+        )
+
+    def test_cli_parser(self):
+        self.assertEqual(
+            self.conf.cli_values(shlex.split('test -r short --bool')),
+            {'required': 'short', 'bool': True})
+        self.assertEqual(
+            self.conf.cli_values(shlex.split('test --required long')),
+            {'required': 'long'})
+        self.assertEqual(
+            self.conf.cli_values(shlex.split('test')),
+            {})
+
+    @mock.patch.dict('os.environ', {'TEST_REQUIRED': 'ENV2'})
+    def test_env_parser(self):
+        self.assertEqual(
+            self.conf.parse_env(),
+            {'required': 'ENV2'})
+
+    def test_ini_parser(self):
+        # TODO(zns): need to add this test
+        pass
+
+    def test_keyring_parser(self):
+        # TODO(zns): need to add this test
+        pass
+
+
+@mock.patch.object(config.warnings, 'warn', mock.Mock())  # less noise in tests
 class TestConfig(unittest.TestCase):
 
     def get_tempfile(self, *args, **kwargs):
@@ -94,6 +164,19 @@ class TestConfig(unittest.TestCase):
         ])
         with self.assertRaises(SystemExit):
             cfg.parse(['prog', '--foo'], strict=True)
+
+    def test_not_strict(self):
+        cfg = config.Config(options=[
+            config.Option('--one', default=1),
+        ])
+        cfg.parse(['prog', '--foo'], strict=False)
+
+    def test_pass_thru(self):
+        cfg = config.Config(options=[
+            config.Option('--one', default=1),
+        ])
+        cfg.parse(['prog', '--one=1', '--',  '--pt'], strict=True)
+        self.assertEqual(cfg.pass_thru_args, ['--pt'])
 
     @mock.patch.dict('os.environ', {'TEST_TWO': '2'})
     def test_required(self):
@@ -398,7 +481,7 @@ class TestConfig(unittest.TestCase):
 
     @mock.patch('sys.stdout', new_callable=six.StringIO)
     def test_default_help_formatter(self, mock_stdout):
-        """Default Belp Formatter Still Works."""
+        """Default Help Formatter Still Works."""
         OPTS = [
             config.Option(
                 '--host',
@@ -416,21 +499,22 @@ class TestConfig(unittest.TestCase):
             conf.parse(argv=['test.py', '-h'])
         except SystemExit:
             pass
-        expected = """\
-usage: test [-h] [--ini PATH] [--host HOST]
+        expected = textwrap.dedent("""\
+        usage: test [-h] [--ini PATH] [--host HOST]
 
-optional arguments:
-  -h, --help   show this help message and exit
-  --host HOST  Server address. (default: 127.0.0.1)
+        optional arguments:
+          -h, --help   show this help message and exit
+          --host HOST  Server address. (default: 127.0.0.1)
 
-initialization (metaconfig) arguments:
-  evaluated first and can be used to source an entire config
+        initialization (metaconfig) arguments:
+          evaluated first and can be used to source an entire config
 
-  --ini PATH   Source some or all of the options from this ini file.
-"""
+          --ini PATH   Source some or all of the options from this ini file.
+        """)
         self.assertEqual(mock_stdout.getvalue(), expected)
 
 
+@mock.patch.object(config.warnings, 'warn', mock.Mock())  # less noise in tests
 class TestConfigPrecedence(unittest.TestCase):
 
     def setUp(self):
