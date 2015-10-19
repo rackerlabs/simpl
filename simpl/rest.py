@@ -18,6 +18,8 @@ import functools
 import itertools
 import json
 import logging
+import sys
+import traceback as tb_mod
 
 import bottle
 try:
@@ -25,9 +27,11 @@ try:
 except ImportError:
     yaml = None
 
+
 LOG = logging.getLogger(__name__)
 MAX_PAGE_SIZE = 10000000
 STANDARD_QUERY_PARAMS = ('offset', 'limit', 'sort', 'q', 'facets')
+UNEXPECTED_ERROR = "We're sorry, something went wrong."
 
 
 class HTTPError(Exception):
@@ -366,3 +370,64 @@ def error_formatter(error):
 
     error.apply(bottle.response)
     return writer({'error': output})
+
+
+def format_error_response(error):
+    """Format error responses properly, return the response body.
+
+    This function can be attached to the Bottle instance as the
+    default_error_handler function. It is also used by the
+    FormatExceptionMiddleware.
+    """
+    status_code = error.status_code or 500
+    output = {
+        'code': status_code,
+        'description': error.body or UNEXPECTED_ERROR,
+        'message': bottle.HTTP_CODES.get(status_code, u''),
+    }
+    if bottle.DEBUG:
+        LOG.warning("Debug-mode server is returning traceback and error "
+                    "details in the response with a %s status.",
+                    error.status_code)
+        if error.exception:
+            output['exception'] = repr(error.exception)
+        else:
+            if any(sys.exc_info()):
+                output['exception'] = repr(sys.exc_info()[1])
+            else:
+                output['exception'] = None
+
+        if error.traceback:
+            output['traceback'] = error.traceback
+        else:
+            if any(sys.exc_info()):
+                # Otherwise, format_exc() returns "None\n"
+                # which is pretty silly.
+                output['traceback'] = tb_mod.format_exc()
+            else:
+                output['traceback'] = None
+
+    # overwrite previous body attr with json
+    if isinstance(output['description'], bytes):
+        output['description'] = output['description'].decode(
+            'utf-8', errors='replace')
+
+    # Default type and writer to json.
+    accept = bottle.request.get_header('accept') or 'application/json'
+    writer = functools.partial(
+        json.dumps, sort_keys=True, indent=4)
+    error.set_header('Content-Type', 'application/json')
+    if 'json' not in accept:
+        if 'yaml' in accept:
+            if not yaml:
+                LOG.warning("Yaml requested but pyyaml is not installed.")
+            else:
+                error.set_header('Content-Type', 'application/x-yaml')
+                writer = functools.partial(
+                    yaml.safe_dump,
+                    default_flow_style=False,
+                    indent=4)
+            # html could be added here.
+
+    error.body = [writer(output).encode('utf8')]
+    return error.body
