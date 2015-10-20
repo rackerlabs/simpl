@@ -169,7 +169,6 @@ import errno
 import logging
 import os
 import sys
-import warnings
 
 import simpl.exceptions
 
@@ -558,46 +557,6 @@ class Config(collections.MutableMapping):
             msg = "One of %s required. " % " ,".join(optstrings)
             raise SystemExit(msg + "See --help for more info.")
         return results
-
-    def parse_cli(self, argv=None, permissive=False):
-        """Parse command-line arguments into values.
-
-        :keyword permissive: when true, does not validate required or extra
-            arguments.
-        """
-        warnings.warn("Calling `parse_cli` directly is deprecated. It will be "
-                      "removed in v0.8.0. Call `cli_values` and/or "
-                      "`validate_config` instead.", DeprecationWarning)
-        if argv is None:
-            argv = self._argv or sys.argv
-        options = []
-        for option in self._options:
-            kwargs = option.kwargs.copy()
-            original_default = kwargs.get('default')
-            if original_default is not None:
-                kwargs['default'] = argparse.SUPPRESS
-                # Since we're suppressing defaults, we need to somehow preserve
-                # the default value for the help text:
-                help_text = kwargs.get('help', '')
-                kwargs['help'] = '%s (default: %s)' % (
-                    help_text, original_default
-                )
-            temp = Option(*option.args, **kwargs)
-            options.append(temp)
-        parser = self.build_parser(options, permissive=permissive)
-        parsed, extras = parser.parse_known_args(argv[1:])
-        if extras:
-            valid, pass_thru = self.parse_passthru_args(argv[1:])
-            parsed, extras = parser.parse_known_args(valid)
-            if extras and not permissive:
-                self.build_parser(options, permissive=permissive)
-                parser.parse_args(argv[1:])
-            self.pass_thru_args = pass_thru + extras
-        else:
-            # maybe reset pass_thru_args on subsequent calls
-            # parse() -> cli_values() is called post-plugin-init
-            self.pass_thru_args = []
-        return vars(parsed)
 
     def parse_env(self, env=None, namespace=None):
         """Parse environment variables."""
