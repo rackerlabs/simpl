@@ -29,6 +29,11 @@ class TestFmtExcMiddleware(unittest.TestCase):
         app.route(path='/unexpected_error', method='GET',
                   callback=unexpected_error)
 
+        def keyboard():
+            raise KeyboardInterrupt("A funny signal.")
+        app.route(path='/keyboard', method='GET',
+                  callback=keyboard)
+
         def simpl_500():
             raise simpl_exc.SimplHTTPError(body="Help.", status=500)
         app.route(path='/simpl_500', method='GET', callback=simpl_500)
@@ -86,6 +91,56 @@ class TestFmtExcMiddleware(unittest.TestCase):
         self.assertIn('message', resp.json_body)
         self.assertIn('code', resp.json_body)
         self.assertIn('description', resp.json_body)
+        self.assertEqual(
+            resp.json_body['description'],
+            "We're sorry, something went wrong."
+        )
+        self.assertEqual(
+            resp.json_body['message'],
+            "Internal Server Error"
+        )
+        self.assertEqual(
+            resp.json_body['code'],
+            500
+        )
+
+    def test_keyboard(self):
+        resp = self.app.get('/keyboard', expect_errors=True)
+        self.assertEqual(resp.status_code, 500)
+        self.assertIn('message', resp.json_body)
+        self.assertIn('code', resp.json_body)
+        self.assertIn('description', resp.json_body)
+        self.assertEqual(
+            resp.json_body['description'],
+            "We're sorry, something went wrong."
+        )
+        self.assertEqual(
+            resp.json_body['message'],
+            "Internal Server Error"
+        )
+        self.assertEqual(
+            resp.json_body['code'],
+            500
+        )
+
+    def test_keyboard_debug(self):
+        bottle.debug(True)
+        resp = self.app.get('/keyboard', expect_errors=True)
+        bottle.debug(False)
+        self.assertEqual(resp.status_code, 500)
+        self.assertIn('message', resp.json_body)
+        self.assertIn('code', resp.json_body)
+        self.assertIn('description', resp.json_body)
+        self.assertIn('exception', resp.json_body)
+        self.assertIn('traceback', resp.json_body)
+        self.assertEqual(
+            len(resp.json_body['traceback'].splitlines()),
+            14
+        )
+        self.assertEqual(
+            resp.json_body['exception'],
+            "KeyboardInterrupt('A funny signal.',)"
+        )
         self.assertEqual(
             resp.json_body['description'],
             "We're sorry, something went wrong."

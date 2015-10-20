@@ -79,6 +79,7 @@ Example:
 """
 
 import logging
+import sys
 import traceback as tb_mod
 
 import bottle
