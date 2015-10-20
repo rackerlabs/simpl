@@ -45,6 +45,7 @@ Includes sample middleware for use with WSGI apps including bottle.
 Middleware included:
 - CORS: handles CORS requests
 - Context: handles setting a threadlocal context and adds a transaction ID.
+- Errors: handles catching and formatting errors
 
 
 ## <a name="rest"></a>REST API Tooling

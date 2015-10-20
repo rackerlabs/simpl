@@ -121,3 +121,28 @@ class SimplConfigUnknownOption(SimplConfigException):
     For example, a specified ini file has an option with no corresponding
     config.Option.
     """
+
+
+class SimplHTTPError(SimplException):
+
+    """A custom http error class inspired by bottle's HTTPError.
+
+    Bottle has special treatment of its own HTTPErrors. Instances of
+    this class will be ignored by bottle. The benefit is that the
+    error handling logic in rest.py can deal with either exception
+    using the same code.
+
+    See rest.httperror_handler
+    """
+
+    default_status = 500
+
+    def __init__(self, status=None, body=None, exception=None,
+                 traceback=None, **options):
+        body = body if body is not None else ''
+        super(SimplHTTPError, self).__init__(body)
+        self.exception = exception
+        self.traceback = traceback
+        self.body = body
+        self.status_code = int(status) or self.default_status
+        self.options = options
