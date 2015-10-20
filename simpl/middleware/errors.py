@@ -78,11 +78,11 @@ from __future__ import print_function
 
 import logging
 import sys
-import traceback as tb_mod
+import traceback
 
 import bottle
 
-from simpl import exceptions as simpl_exc
+from simpl import exceptions
 from simpl import rest
 
 LOG = logging.getLogger(__name__)
@@ -140,13 +140,13 @@ class FormatExceptionMiddleware(object):
             rest.format_error_response(error)
             start_response(error.status_line, error.headerlist)
             return error
-        except simpl_exc.SimplHTTPError as error:
+        except exceptions.SimplHTTPError as error:
             LOG.error("Formatting a SimplHTTPError exception.",
                       exc_info=error)
             error = bottle.HTTPError(
                 status=error.status_code, body=error.body,
                 exception=error.exception or error,
-                traceback=error.traceback or tb_mod.format_exc())
+                traceback=error.traceback or traceback.format_exc())
             rest.format_error_response(error)
             start_response(error.status_line, error.headerlist)
             return error
@@ -156,7 +156,7 @@ class FormatExceptionMiddleware(object):
             error = bottle.HTTPError(
                 status=500, body=rest.UNEXPECTED_ERROR,
                 exception=error,
-                traceback=tb_mod.format_exc())
+                traceback=traceback.format_exc())
             rest.format_error_response(error)
             start_response(error.status_line, error.headerlist)
             return error
@@ -166,7 +166,7 @@ class FormatExceptionMiddleware(object):
             error = bottle.HTTPError(
                 status=500, body=rest.UNEXPECTED_ERROR,
                 exception=sys.exc_info()[1],
-                traceback=tb_mod.format_exc())
+                traceback=traceback.format_exc())
             rest.format_error_response(error)
             start_response(error.status_line, error.headerlist)
             return error

@@ -19,13 +19,16 @@ import itertools
 import json
 import logging
 import sys
-import traceback as tb_mod
+import traceback
+import warnings
 
 import bottle
 try:
     import yaml
 except ImportError:
     yaml = None
+
+from simpl import exceptions
 
 
 LOG = logging.getLogger(__name__)
@@ -403,7 +406,7 @@ def format_error_response(error):
             if any(sys.exc_info()):
                 # Otherwise, format_exc() returns "None\n"
                 # which is pretty silly.
-                output['traceback'] = tb_mod.format_exc()
+                output['traceback'] = traceback.format_exc()
             else:
                 output['traceback'] = None
 
