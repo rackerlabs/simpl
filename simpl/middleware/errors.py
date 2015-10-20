@@ -25,9 +25,9 @@ Example:
     app.catchall = False
     # To catch errors that occur in other middleware...
     app = FormatExceptionMiddleware(app)
-    # Tell bottle to use rest.format_error_response when
+    # Tell bottle to use rest.httperror_handler when
     # handling its own bottle.HTTPErrors
-    app.default_error_handler = rest.format_error_response
+    app.default_error_handler = rest.httperror_handler
     bottle.run(app=app)
 
 
@@ -137,7 +137,7 @@ class FormatExceptionMiddleware(object):
             LOG.error("Formatting a bottle exception.",
                       exc_info=error)
 
-            rest.format_error_response(error)
+            rest.httperror_handler(error)
             start_response(error.status_line, error.headerlist)
             return error
         except exceptions.SimplHTTPError as error:
@@ -147,7 +147,7 @@ class FormatExceptionMiddleware(object):
                 status=error.status_code, body=error.body,
                 exception=error.exception or error,
                 traceback=error.traceback or traceback.format_exc())
-            rest.format_error_response(error)
+            rest.httperror_handler(error)
             start_response(error.status_line, error.headerlist)
             return error
         except Exception as error:  # pylint: disable=W0703
@@ -157,7 +157,7 @@ class FormatExceptionMiddleware(object):
                 status=500, body=rest.UNEXPECTED_ERROR,
                 exception=error,
                 traceback=traceback.format_exc())
-            rest.format_error_response(error)
+            rest.httperror_handler(error)
             start_response(error.status_line, error.headerlist)
             return error
         except:  # noqa
@@ -167,6 +167,6 @@ class FormatExceptionMiddleware(object):
                 status=500, body=rest.UNEXPECTED_ERROR,
                 exception=sys.exc_info()[1],
                 traceback=traceback.format_exc())
-            rest.format_error_response(error)
+            rest.httperror_handler(error)
             start_response(error.status_line, error.headerlist)
             return error

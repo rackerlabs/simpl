@@ -298,7 +298,7 @@ def comma_separated_strings(value):
     return [str(k).strip() for k in value.split(",")]
 
 
-def format_error_response(error):
+def httperror_handler(error):
     """Format error responses properly, return the response body.
 
     This function can be attached to the Bottle instance as the

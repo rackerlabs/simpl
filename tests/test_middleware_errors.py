@@ -22,7 +22,7 @@ class TestFmtExcMiddleware(unittest.TestCase):
 
         app = bottle.default_app()
         app.catchall = False
-        app.default_error_handler = rest.format_error_response
+        app.default_error_handler = rest.httperror_handler
 
         def unexpected_error():
             raise Exception("My logic is bad.")
@@ -275,7 +275,7 @@ class TestFmtExcMiddlewareAlt(unittest.TestCase):
 
         app = bottle.default_app()
         app.catchall = False
-        app.default_error_handler = rest.format_error_response
+        app.default_error_handler = rest.httperror_handler
 
         app.route(path='/', method='GET',
                   callback=lambda: 'Hello')

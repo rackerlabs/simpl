@@ -132,7 +132,7 @@ class SimplHTTPError(SimplException):
     error handling logic in rest.py can deal with either exception
     using the same code.
 
-    See rest.format_error_response()
+    See rest.httperror_handler
     """
 
     default_status = 500

@@ -321,7 +321,7 @@ class TestAPIBasics(unittest.TestCase):
         """Init the tests by starting the bottle app and routes."""
         super(TestAPIBasics, self).setUp()
         app = bottle.Bottle()
-        app.default_error_handler = rest.format_error_response
+        app.default_error_handler = rest.httperror_handler
         app.route(path='/', method='GET', callback=self.dummy_ok)
         app.route(path='/fail', method='GET', callback=self.dummy_fail)
         app.route(path='/bad', method='GET', callback=self.bad_code)
