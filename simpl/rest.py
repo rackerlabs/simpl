@@ -20,7 +20,6 @@ import json
 import logging
 import sys
 import traceback
-import warnings
 
 import bottle
 try:
@@ -28,24 +27,13 @@ try:
 except ImportError:
     yaml = None
 
-from simpl import exceptions
+from simpl.exceptions import SimplHTTPError as HTTPError  # noqa
 
 
 LOG = logging.getLogger(__name__)
 MAX_PAGE_SIZE = 10000000
 STANDARD_QUERY_PARAMS = ('offset', 'limit', 'sort', 'q', 'facets')
 UNEXPECTED_ERROR = "We're sorry, something went wrong."
-
-
-class HTTPError(Exception):
-
-    """Include HTTP Code, description and reason in exception."""
-
-    def __init__(self, message, http_code=400, reason=None):
-        """Initialize normal error, but save http code and reason."""
-        super(HTTPError, self).__init__(message)
-        self.http_code = http_code
-        self.reason = reason
 
 
 def body(schema=None, types=None, required=False, default=None):
@@ -310,71 +298,6 @@ def comma_separated_strings(value):
     return [str(k).strip() for k in value.split(",")]
 
 
-def error_formatter(error):
-    """Bottle error formatter.
-
-    This will take caught errors and output them in our opinionated format and
-    the requested media-type. We default to json if we don't recognize or
-    support the content.
-
-    The content format is:
-
-        error:             - this is the wrapper for the returned error object
-            code:          - the HTTP error code (ex. 404)
-            message:       - the HTTP error code message (ex. Not Found)
-            description:   - the plain english, user-friendly description. Use
-                             this to to surface a UI/CLI. non-technical message
-            reason:        - (optional) any additional technical information to
-                             help a technical user with troubleshooting
-
-    Usage as a default handler:
-
-        import bottle
-        from simple import rest
-
-        app = bottle.default_app()
-        app.default_error_handler = rest.error_formatter
-
-        # Meanwhile, elsewhere in a module nearby
-        raise rest.HTTPError("Ouch!", http_code=500, reason="Lapse of reason")
-    """
-    output = {}
-    accept = bottle.request.get_header("Accept") or ""
-    if "application/x-yaml" in accept:
-        error.headers.update({"content-type": "application/x-yaml"})
-        writer = functools.partial(yaml.safe_dump, default_flow_style=False)
-    else:  # default to JSON
-        error.headers.update({"content-type": "application/json"})
-        writer = json.dumps
-
-    description = error.body or error.exception
-    if isinstance(error.exception, AssertionError):
-        error.status = 400
-        description = str(error.exception)
-        LOG.error(error.exception)
-    elif isinstance(error.exception, HTTPError):
-        error.status = error.exception.http_code
-        description = str(error.exception)
-        if error.exception.reason:
-            output['reason'] = error.exception.reason
-        LOG.error(error.exception)
-    elif error.exception:
-        error.status = 500
-        description = "Unexpected error"
-
-    # Log unexpected args
-    if hasattr(error.exception, 'args'):
-        if len(error.exception.args) > 1:
-            LOG.warning('HTTPError: %s', error.exception.args)
-
-    output['description'] = description
-    output['code'] = error.status_code
-    output['message'] = error.status_line.split(' ', 1)[1]
-
-    error.apply(bottle.response)
-    return writer({'error': output})
-
-
 def format_error_response(error):
     """Format error responses properly, return the response body.
 
@@ -386,7 +309,7 @@ def format_error_response(error):
     output = {
         'code': status_code,
         'message': error.body or UNEXPECTED_ERROR,
-        'reason': bottle.HTTP_CODES.get(status_code, u''),
+        'reason': bottle.HTTP_CODES.get(status_code) or None,
     }
     if bottle.DEBUG:
         LOG.warning("Debug-mode server is returning traceback and error "

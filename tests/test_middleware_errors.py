@@ -39,7 +39,7 @@ class TestFmtExcMiddleware(unittest.TestCase):
         app.route(path='/simpl_500', method='GET', callback=simpl_500)
 
         def simpl_500_alt():
-            raise rest.HTTPError("And I feel bad.", status=500)
+            raise rest.HTTPError(body="And I feel bad.", status=500)
         app.route(path='/simpl_500_alt', method='GET', callback=simpl_500_alt)
 
         def bottle_500():
@@ -205,7 +205,7 @@ class TestFmtExcMiddleware(unittest.TestCase):
         self.assertIn('message', resp.json_body)
         self.assertEqual(
             resp.json_body['message'],
-            "We're sorry, something went wrong."
+            "And I feel bad."
         )
         self.assertEqual(
             resp.json_body['reason'],
