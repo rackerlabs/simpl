@@ -382,8 +382,8 @@ def format_error_response(error):
     status_code = error.status_code or 500
     output = {
         'code': status_code,
-        'description': error.body or UNEXPECTED_ERROR,
-        'message': bottle.HTTP_CODES.get(status_code, u''),
+        'message': error.body or UNEXPECTED_ERROR,
+        'reason': bottle.HTTP_CODES.get(status_code, u''),
     }
     if bottle.DEBUG:
         LOG.warning("Debug-mode server is returning traceback and error "
@@ -408,8 +408,8 @@ def format_error_response(error):
                 output['traceback'] = None
 
     # overwrite previous body attr with json
-    if isinstance(output['description'], bytes):
-        output['description'] = output['description'].decode(
+    if isinstance(output['message'], bytes):
+        output['message'] = output['message'].decode(
             'utf-8', errors='replace')
 
     # Default type and writer to json.

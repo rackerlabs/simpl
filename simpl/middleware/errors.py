@@ -36,47 +36,45 @@ Example:
 
     An unexpected error if the server is in debug mode:
 
-        # raise ValueError()
+        # raise TypeError('Poor type choice.')
         {
             "code": 500,
-            "description": "Internal Server Error",
-            "exception": "ValueError()",
-            "message": "Internal Server Error",
+            "exception": "TypeError('Poor type choice.',)",
+            "message": "We're sorry, something went wrong.",
+            "reason": "Internal Server Error",
             "traceback": "Traceback (most recent call last): ... ",
         }
-
 
     An "expected" error if the server is in debug mode:
 
         # raise SimplHTTPError(body='Hey!', status=405)
         {
             "code": 405,
-            "description": "Hey!",
             "exception": "SimplHTTPError('Hey!',)",
-            "message": "Method Not Allowed",
-            "traceback": "Traceback (most recent call last): ... ",
+            "message": "Hey!",
+            "reason": "Method Not Allowed",
+            "traceback": "Traceback (most recent call last): ..."
         }
-
 
     Unexpected error without debug mode:
 
-        # raise ValueError()
+        # raise TypeError('Poor type choice.')
         {
             "code": 500,
-            "description": "We're sorry, something went wrong.",
-            "message": "Internal Server Error"
+            "message": "We're sorry, something went wrong.",
+            "reason": "Internal Server Error"
         }
-
 
     An "expected" error without debug mode:
 
         # raise SimplHTTPError(body='Hey!', status=405)
         {
             "code": 405,
-            "description": "Hey!",
-            "message": "Method Not Allowed"
+            "message": "Hey!",
+            "reason": "Method Not Allowed"
         }
 """
+from __future__ import print_function
 
 import logging
 import sys

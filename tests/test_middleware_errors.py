@@ -59,9 +59,9 @@ class TestFmtExcMiddleware(unittest.TestCase):
         resp = self.app.get('/unexpected_error', expect_errors=True)
         bottle.debug(False)
         self.assertEqual(resp.status_code, 500)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertIn('exception', resp.json_body)
         self.assertIn('traceback', resp.json_body)
         self.assertEqual(
@@ -73,11 +73,11 @@ class TestFmtExcMiddleware(unittest.TestCase):
             "Exception('My logic is bad.',)"
         )
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "We're sorry, something went wrong."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
@@ -88,15 +88,15 @@ class TestFmtExcMiddleware(unittest.TestCase):
     def test_unexpected_error(self):
         resp = self.app.get('/unexpected_error', expect_errors=True)
         self.assertEqual(resp.status_code, 500)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "We're sorry, something went wrong."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
@@ -107,15 +107,15 @@ class TestFmtExcMiddleware(unittest.TestCase):
     def test_keyboard(self):
         resp = self.app.get('/keyboard', expect_errors=True)
         self.assertEqual(resp.status_code, 500)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "We're sorry, something went wrong."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
@@ -128,9 +128,9 @@ class TestFmtExcMiddleware(unittest.TestCase):
         resp = self.app.get('/keyboard', expect_errors=True)
         bottle.debug(False)
         self.assertEqual(resp.status_code, 500)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertIn('exception', resp.json_body)
         self.assertIn('traceback', resp.json_body)
         self.assertEqual(
@@ -142,11 +142,11 @@ class TestFmtExcMiddleware(unittest.TestCase):
             "KeyboardInterrupt('A funny signal.',)"
         )
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "We're sorry, something went wrong."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
@@ -162,15 +162,15 @@ class TestFmtExcMiddleware(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, 500)
         yaml_body = yaml.safe_load(resp.body)
-        self.assertIn('message', yaml_body)
+        self.assertIn('reason', yaml_body)
         self.assertIn('code', yaml_body)
-        self.assertIn('description', yaml_body)
+        self.assertIn('message', yaml_body)
         self.assertEqual(
-            yaml_body['description'],
+            yaml_body['message'],
             "We're sorry, something went wrong."
         )
         self.assertEqual(
-            yaml_body['message'],
+            yaml_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
@@ -181,15 +181,15 @@ class TestFmtExcMiddleware(unittest.TestCase):
     def test_simpl_500(self):
         resp = self.app.get('/simpl_500', expect_errors=True)
         self.assertEqual(resp.status_code, 500)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "Help."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
@@ -200,15 +200,15 @@ class TestFmtExcMiddleware(unittest.TestCase):
     def test_simpl_500_alt(self):
         resp = self.app.get('/simpl_500_alt', expect_errors=True)
         self.assertEqual(resp.status_code, 500)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "We're sorry, something went wrong."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
@@ -219,15 +219,15 @@ class TestFmtExcMiddleware(unittest.TestCase):
     def test_bottle_500(self):
         resp = self.app.get('/bottle_500', expect_errors=True)
         self.assertEqual(resp.status_code, 500)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "Not sorry."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
@@ -238,15 +238,15 @@ class TestFmtExcMiddleware(unittest.TestCase):
     def test_simpl_403(self):
         resp = self.app.get('/simpl_403', expect_errors=True)
         self.assertEqual(resp.status_code, 403)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "Rejected."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Forbidden"
         )
         self.assertEqual(
@@ -293,9 +293,9 @@ class TestFmtExcMiddlewareAlt(unittest.TestCase):
         resp = self.app.get('/', expect_errors=True)
         bottle.debug(False)
         self.assertEqual(resp.status_code, 500)
-        self.assertIn('message', resp.json_body)
+        self.assertIn('reason', resp.json_body)
         self.assertIn('code', resp.json_body)
-        self.assertIn('description', resp.json_body)
+        self.assertIn('message', resp.json_body)
         self.assertIn('exception', resp.json_body)
         self.assertIn('traceback', resp.json_body)
         self.assertEqual(
@@ -307,11 +307,11 @@ class TestFmtExcMiddlewareAlt(unittest.TestCase):
             "Exception('Bugs!',)"
         )
         self.assertEqual(
-            resp.json_body['description'],
+            resp.json_body['message'],
             "We're sorry, something went wrong."
         )
         self.assertEqual(
-            resp.json_body['message'],
+            resp.json_body['reason'],
             "Internal Server Error"
         )
         self.assertEqual(
