@@ -84,7 +84,7 @@ class ContextMiddleware(object):  # pylint: disable=R0903
     def __call__(self, environ, start_response):
         """Handle WSGI Request."""
         with clear(threadlocal.default()) as context:
-            assert context == {}, "New thread context was not empty."
+            assert context == {}, "New thread context was not empty"
             self.populate_context(context, environ)
             environ['context'] = context
             resp = self.app(
@@ -107,6 +107,8 @@ class ContextMiddleware(object):  # pylint: disable=R0903
 @contextlib.contextmanager
 def clear(local_dict):
     """Context manager that clears objects when done."""
-    yield local_dict
-    LOG.debug("Clearing local context %s", id(local_dict))
-    local_dict.clear()
+    try:
+        yield local_dict
+    finally:
+        LOG.debug("Clearing local context %s", id(local_dict))
+        local_dict.clear()
