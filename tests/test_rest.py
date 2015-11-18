@@ -57,6 +57,25 @@ class TestBodyDecorator(unittest.TestCase):
             route()
 
     @mock.patch.object(rest.bottle, 'request')
+    def test_invalid_data(self, mock_request):
+        """Test invalid data is handled gracefully."""
+        type(mock_request).json = mock.PropertyMock(side_effect=ValueError)
+        mock_handler = mock.Mock()
+        route = rest.body(schema=int)(mock_handler)
+        with self.assertRaises(bottle.HTTPError):
+            route()
+
+    @mock.patch.object(rest.bottle, 'request')
+    def test_invalid_encoding(self, mock_request):
+        """Test invalid encoding is handled gracefully."""
+        type(mock_request).json = mock.PropertyMock(
+            side_effect=UnicodeDecodeError('ascii', b'', 0, 1, 'bad'))
+        mock_handler = mock.Mock()
+        route = rest.body(schema=int)(mock_handler)
+        with self.assertRaises(bottle.HTTPError):
+            route()
+
+    @mock.patch.object(rest.bottle, 'request')
     def test_required(self, mock_request):
         """Test required is enforced."""
         mock_request.json = None
