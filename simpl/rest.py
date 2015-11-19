@@ -57,7 +57,10 @@ def body(schema=None, types=None, required=False, default=None):
         """Return a decorated callable."""
         def wrapped(*args, **kwargs):
             """Callable to called when the decorated function is called."""
-            data = bottle.request.json
+            try:
+                data = bottle.request.json
+            except (ValueError, UnicodeDecodeError) as exc:
+                bottle.abort(400, str(exc))
             if required and not data:
                 bottle.abort(400, "Call body cannot be empty")
             if data is None:
