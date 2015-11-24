@@ -68,8 +68,6 @@ def body(schema=None, types=None, required=False, default=None):
             if schema:
                 try:
                     data = schema(data)
-                except (KeyboardInterrupt, SystemExit):
-                    raise  # don't catch and ignore attempts to end the app
                 except Exception as exc:
                     bottle.abort(400, str(exc))
             return fxn(data, *args, **kwargs)

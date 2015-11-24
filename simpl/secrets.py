@@ -29,8 +29,6 @@ def hide_url_password(url):
         parsed = parse.urlsplit(url)
         if parsed.password:
             return url.replace(':%s@' % parsed.password, ':*****@')
-    except (KeyboardInterrupt, SystemExit):
-        raise
     except Exception:  # pylint: disable=W0703
         pass
     return url
