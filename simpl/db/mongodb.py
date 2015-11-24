@@ -240,6 +240,7 @@ class SimplDB(object):
         self._client = None
         self._connection = None
         if eventlet:
+            self.client_lock = eventlet.semaphore.Semaphore()
             eventlet.spawn_n(self.tune)
         else:
             self.tune()
@@ -262,10 +263,15 @@ class SimplDB(object):
 
     @property
     def client(self):
-        """Return a lazy-instantiated pymongo client."""
+        """Return a lazy-instantiated pymongo client.
+
+        When running with eventlet, connection causes IO and can result in more
+        than one MongoDB client getting instantiatied, so we wrap the code in
+        a semaphore to make sure only one mongodb client is instantiated per
+        SimplDB class.
+        """
         if eventlet:
-            block = eventlet.semaphore.Semaphore(id(self))
-            with block:
+            with self.client_lock:
                 self._set_client()
         else:
             self._set_client()
