@@ -43,6 +43,8 @@ class HelpfulParser(argparse.ArgumentParser):
                        % (message, " ".join(sys.argv)))
         if print_help:
             self.print_help()
+        else:
+            self.print_usage()
         sys.stderr.write('\nerror: %s\n' % message)
         sys.exit(2)
 
