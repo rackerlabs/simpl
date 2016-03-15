@@ -48,7 +48,7 @@ class TestServer(unittest.TestCase):
         self.assertEqual(resp.content, b'<b>Hello xeventlet</b>!')
 
     def test_simpl_server(self):
-        argv = ['server', '--quiet-server', '--port', str(get_free_port())]
+        argv = ['server', '--quiet', '--port', str(get_free_port())]
         proc = multiprocessing.Process(
             target=simpl_cli.main, kwargs={'argv': argv})
         proc.start()
