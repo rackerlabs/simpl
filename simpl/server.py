@@ -269,8 +269,54 @@ def attach_parser(subparser):
     )
 
 
+def fmt_pairs(obj, indent=4, sort_key=None):
+    """Format and sort a list of pairs, usually for printing.
+
+    If sort_key is provided, the value will be passed as the
+    'key' keyword argument of the sorted() function when
+    sorting the items. This allows for the input such as
+    [('A', 3), ('B', 5), ('Z', 1)] to be sorted by the ints
+    but formatted like so:
+
+        l = [('A', 3), ('B', 5), ('Z', 1)]
+        print(fmt_pairs(l, sort_key=lambda x: x[1]))
+
+            Z 1
+            A 3
+            B 5
+        where the default behavior would be:
+
+        print(fmt_pairs(l))
+
+            A 3
+            B 5
+            Z 1
+    """
+    lengths = [len(x[0]) for x in obj]
+    if not lengths:
+        return ''
+    longest = max(lengths)
+    obj = sorted(obj, key=sort_key)
+    formatter = '%s{: <%d} {}' % (' '*indent, longest)
+    string = '\n'.join([formatter.format(k, v) for k, v in obj])
+    return string
+
+
+def fmt_routes(bottle_app):
+    """Return a pretty formatted string of the list of routes."""
+    routes = [(r.method, r.rule) for r in bottle_app.routes]
+    if not routes:
+        return
+    string = 'Routes:\n'
+    string += fmt_pairs(routes, sort_key=operator.itemgetter(1))
+    return string
+
+
 def run(conf):
-    """Simpl server command line interface."""
+    """Run server based on this configuration.
+
+    Expects configuration options defined in server.OPTIONS
+    """
     if isinstance(conf.adapter_options, list):
         options = {key: val for _dict in conf.adapter_options
                    for key, val in _dict.items()}
@@ -283,9 +329,22 @@ def run(conf):
     if conf.app and (os.getcwd() not in sys.path):
         sys.path.append(os.getcwd())
 
+    # get wsgi app the same way bottle does *in advance*
+    conf.app = conf.app or bottle.default_app()
+    if isinstance(conf.app, six.string_types):
+        conf.app = bottle.load_app(conf.app)
+
     try:
-        if conf.reloader and not os.getenv('BOTTLE_CHILD'):
-            LOG.info("Running bottle server with reloader.")
+        if os.getenv('BOTTLE_CHILD'):
+            if conf.reloader:
+                LOG.info("Running bottle server with reloader.")
+            if conf.app and not conf.quiet:
+                try:
+                    routes = fmt_routes(conf.app)
+                    if routes:
+                        print('\n{}'.format(fmt_routes(conf.app)), end='\n\n')
+                except AttributeError:
+                    pass
         return bottle.run(
             app=conf.app,
             server=conf.server,
@@ -302,7 +361,7 @@ def run(conf):
 
 
 def main(argv=None):
-    """Entry point for server, runs based on parsed CONFIG."""
+    """Command line entry point for server, runs based on parsed CONFIG."""
     CONFIG.parse(argv=argv)
     return run(CONFIG)
 
