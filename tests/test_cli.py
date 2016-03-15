@@ -10,6 +10,7 @@ import subprocess
 import sys
 import unittest
 
+import bottle
 import mock
 
 from simpl import cli as simpl_cli
@@ -49,7 +50,7 @@ class TestSimplCLI(unittest.TestCase):
     def test_simpl_server_adapter_options(self, mock_bottle_run):
         simpl_cli.main(['server', '-o', 'great_option=real', 'verbose=1'])
         mock_bottle_run.assert_called_with(
-            verbose='1', app=None, interval=1, quiet=False,
+            verbose='1', app=bottle.default_app(), interval=1, quiet=False,
             server='xtornado', port=8080, host='127.0.0.1',
             debug=False, reloader=True, great_option='real')
 
@@ -57,7 +58,8 @@ class TestSimplCLI(unittest.TestCase):
     def test_simpl_server_defaults(self, mock_bottle_run):
         simpl_cli.main(['server'])
         mock_bottle_run.assert_called_with(
-            app=None, interval=1, quiet=False, server='xtornado', port=8080,
+            app=bottle.default_app(),
+            interval=1, quiet=False, server='xtornado', port=8080,
             host='127.0.0.1', debug=False, reloader=True)
 
     @mock.patch('sys.stderr', new_callable=StringIO)

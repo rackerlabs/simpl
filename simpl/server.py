@@ -26,6 +26,8 @@ import textwrap
 import bottle
 import six
 
+import simpl
+
 from simpl import config
 from simpl.utils import cli as cli_utils
 
@@ -312,27 +314,28 @@ def fmt_routes(bottle_app):
     return string
 
 
-def run(conf):
-    """Run server based on this configuration.
+def _version_callback():
+    """Return a dict of simpl version info."""
+    return {
+        'version': simpl.__version__,
+        'url': simpl.__url__,
+    }
 
-    Expects configuration options defined in server.OPTIONS
-    """
+def build_app(conf):
+    """Do some setup and return the wsgi app."""
     if isinstance(conf.adapter_options, list):
-        options = {key: val for _dict in conf.adapter_options
-                   for key, val in _dict.items()}
+        conf.adapter_options = {key: val for _dict in conf.adapter_options
+                                for key, val in _dict.items()}
     elif conf.adapter_options is None:
-        options = {}
+        conf.adapter_options = {}
     else:
-        options = copy.copy(conf.adapter_options)
+        conf.adapter_options = copy.copy(conf.adapter_options)
 
-    # waiting for https://github.com/bottlepy/bottle/pull/783
-    if conf.app and (os.getcwd() not in sys.path):
-        sys.path.append(os.getcwd())
-
-    # get wsgi app the same way bottle does *in advance*
+    # get wsgi app the same way bottle does if it receives a string.
     conf.app = conf.app or bottle.default_app()
     if isinstance(conf.app, six.string_types):
         conf.app = bottle.load_app(conf.app)
+    conf.app.route(path='/_simpl', method='GET', callback=_version_callback)
 
     if os.getenv('BOTTLE_CHILD'):
         if conf.reloader:
@@ -344,6 +347,18 @@ def run(conf):
                     print('\n{}'.format(fmt_routes(conf.app)), end='\n\n')
             except AttributeError:
                 pass
+    return conf.app
+
+
+def run(conf):
+    """Run server based on this configuration.
+
+    Expects configuration options defined in server.OPTIONS
+    """
+    conf.app = build_app(conf)
+    # waiting for https://github.com/bottlepy/bottle/pull/783
+    if conf.app and (os.getcwd() not in sys.path):
+        sys.path.append(os.getcwd())
     return bottle.run(
         app=conf.app,
         server=conf.server,
@@ -353,7 +368,7 @@ def run(conf):
         reloader=conf.reloader,
         quiet=conf.quiet,
         debug=conf.debug,
-        **options
+        **conf.adapter_options
     )
 
 
