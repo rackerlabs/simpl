@@ -22,6 +22,7 @@ import voluptuous as volup
 
 from simpl import rest as simpl_rest
 
+
 class MultiValidationError(Exception):
 
     """Basically a re-imagining of a `voluptuous.MultipleInvalid` error.
@@ -172,7 +173,10 @@ def schema(body_schema=None, body_required=False, query_schema=None,
                 if body is None:
                     body = default_body
                 if body_required and not body:
-                    bottle.abort(400, 'Call body cannot be empty')
+                    raise simpl_rest.HTTPError(
+                        body='Request body cannot be empty.',
+                        status=400,
+                    )
                 if body_schema:
                     try:
                         body = body_schema(body)
@@ -190,11 +194,13 @@ def schema(body_schema=None, body_required=False, query_schema=None,
                     # If the query dict is empty, just set it to None.
                     query = None
 
-                # Pass `body` and `query` as kwargs to the decorated function.
+                # Conditionally add 'body' or 'schema' to kwargs.
+                if any([body_schema, body_required, default_body]):
+                    kwargs['body'] = body
+                if query_schema:
+                    kwargs['query'] = query
                 return func(
                     *args,
-                    body=body,
-                    query=query,
                     **kwargs
                 )
             except MultiValidationError as exc:

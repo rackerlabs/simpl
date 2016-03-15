@@ -17,19 +17,25 @@
 import unittest
 
 import bottle
-from simpl.incubator import rest
 import voluptuous as volup
 import webtest
 
+from simpl import rest as simpl_rest
+from simpl.incubator import rest
+from simpl.middleware import errors as errors_middleware
 
 class TestSchemaDecorator(unittest.TestCase):
 
     def setUp(self):
-        self.root_app = bottle.Bottle()
-        self.app = webtest.TestApp(self.root_app)
+        self.root_app = bottle.Bottle(catchall=False)
+        self.root_app.default_error_handler = simpl_rest.httperror_handler
+        app = errors_middleware.FormatExceptionMiddleware(
+            self.root_app)
+        self.app = webtest.TestApp(app)
+        bottle.debug(True)
 
-        def callback(body=None, query=None):
-            return dict(body=body, query=query)
+        def callback(**kw):
+            return dict(**kw)
         self.callback = callback
 
     def test_no_schema(self):
@@ -38,14 +44,14 @@ class TestSchemaDecorator(unittest.TestCase):
 
         self.root_app.route('/foo', callback=self.callback)
         result = self.app.get('/foo')
-        self.assertEqual(dict(body=None, query=None), result.json)
+        self.assertEqual(dict(), result.json)
 
     def test_no_schema_with_body(self):
-        self.callback = rest.schema()(self.callback)
+        self.callback = rest.schema(body_required=True)(self.callback)
 
         self.root_app.route('/foo', method='POST', callback=self.callback)
         result = self.app.post_json('/foo', params={'a': 1})
-        self.assertEqual(dict(body={'a': 1}, query=None), result.json)
+        self.assertEqual(dict(body={'a': 1}), result.json)
 
     def test_body_schema_no_body(self):
         body_schema = volup.Schema({
@@ -73,23 +79,28 @@ class TestSchemaDecorator(unittest.TestCase):
 
         self.assertEqual(
             # Note that `a` in the body is converted to an int.
-            dict(body=dict(a=1, b=['foo', 'bar']), query=None),
+            dict(body=dict(a=1, b=['foo', 'bar'])),
             result.json
         )
 
     def test_no_schema_with_query(self):
-        self.callback = rest.schema()(self.callback)
+        self.callback = rest.schema(
+                query_schema=lambda _x: _x
+        )(self.callback)
 
         self.root_app.route('/foo', callback=self.callback)
         result = self.app.get('/foo?a=1&b=2&a=foo')
 
         self.assertEqual(
-            dict(body=None, query=dict(b=['2'], a=['1', 'foo'])),
+            dict(query=dict(b=['2'], a=['1', 'foo'])),
             result.json
         )
 
     def test_no_schema_with_body_and_query(self):
-        self.callback = rest.schema()(self.callback)
+        self.callback = rest.schema(
+                body_required=True,
+                query_schema=lambda _x: _x
+        )(self.callback)
 
         self.root_app.route('/foo', method='POST', callback=self.callback)
         result = self.app.post_json(
@@ -107,7 +118,6 @@ class TestSchemaDecorator(unittest.TestCase):
 
         self.root_app.route('/foo', method='POST', callback=self.callback)
         result = self.app.post_json('/foo', expect_errors=True)
-
         self.assertEqual(400, result.status_int)
 
     def test_query_schema(self):
@@ -120,7 +130,7 @@ class TestSchemaDecorator(unittest.TestCase):
         result = self.app.get('/foo?a=foo&b=1&b=2&b=3')
 
         self.assertEqual(
-            dict(body=None, query=dict(a='foo', b=[1, 2, 3])),
+            dict(query=dict(a='foo', b=[1, 2, 3])),
             result.json
         )
 
@@ -185,3 +195,5 @@ MultiValidationError(
         self.assertEqual(expected_message, mve.message)
 
 
+if __name__ == '__main__':
+    unittest.main()
