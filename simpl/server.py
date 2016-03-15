@@ -334,30 +334,27 @@ def run(conf):
     if isinstance(conf.app, six.string_types):
         conf.app = bottle.load_app(conf.app)
 
-    try:
-        if os.getenv('BOTTLE_CHILD'):
-            if conf.reloader:
-                LOG.info("Running bottle server with reloader.")
-            if conf.app and not conf.quiet:
-                try:
-                    routes = fmt_routes(conf.app)
-                    if routes:
-                        print('\n{}'.format(fmt_routes(conf.app)), end='\n\n')
-                except AttributeError:
-                    pass
-        return bottle.run(
-            app=conf.app,
-            server=conf.server,
-            host=conf.host,
-            port=conf.port,
-            interval=conf.interval,
-            reloader=conf.reloader,
-            quiet=conf.quiet,
-            debug=conf.debug,
-            **options
-        )
-    except KeyboardInterrupt:
-        sys.exit("\nKilled simpl server.")
+    if os.getenv('BOTTLE_CHILD'):
+        if conf.reloader:
+            LOG.info("Running bottle server with reloader.")
+        if conf.app and not conf.quiet:
+            try:
+                routes = fmt_routes(conf.app)
+                if routes:
+                    print('\n{}'.format(fmt_routes(conf.app)), end='\n\n')
+            except AttributeError:
+                pass
+    return bottle.run(
+        app=conf.app,
+        server=conf.server,
+        host=conf.host,
+        port=conf.port,
+        interval=conf.interval,
+        reloader=conf.reloader,
+        quiet=conf.quiet,
+        debug=conf.debug,
+        **options
+    )
 
 
 def main(argv=None):
