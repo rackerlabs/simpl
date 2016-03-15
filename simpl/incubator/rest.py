@@ -14,10 +14,13 @@
 
 """Incubator utilities for :mod:`simpl.rest`."""
 
+import traceback
+
 import bottle
 import six
 import voluptuous as volup
 
+from simpl import rest as simpl_rest
 
 class MultiValidationError(Exception):
 
@@ -157,7 +160,15 @@ def schema(body_schema=None, body_required=False, query_schema=None,
             """Validate/coerce request body and parameters."""
             try:
                 # validate the request body per the schema (if applicable):
-                body = bottle.request.json
+                try:
+                    body = bottle.request.json
+                except ValueError as exc:
+                    raise simpl_rest.HTTPError(
+                        body=str(exc),
+                        status=400,
+                        exception=exc,
+                        traceback=traceback.format_exc(),
+                    )
                 if body is None:
                     body = default_body
                 if body_required and not body:
@@ -186,7 +197,12 @@ def schema(body_schema=None, body_required=False, query_schema=None,
                     query=query,
                     **kwargs
                 )
-            except Exception as exc:
-                bottle.abort(400, str(exc))
+            except MultiValidationError as exc:
+                raise simpl_rest.HTTPError(
+                    body=str(exc),
+                    status=400,
+                    exception=exc,
+                    traceback=traceback.format_exc(),
+                )
         return wrapped
     return deco
