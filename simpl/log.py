@@ -55,21 +55,12 @@ OPTIONS = [
     #
     config.Option("--logconfig",
                   help="Optional logging configuration file"),
-    config.Option("-d", "--debug",
-                  default=False,
-                  action="store_true",
-                  help="turn on additional debugging inspection and "
-                  "output including full HTTP requests and responses. "
-                  "Log output includes source file path and line "
-                  "numbers"),
+    config.OPTIONS['debug'],
+    config.OPTIONS['quiet'],
     config.Option("-v", "--verbose",
                   default=False,
                   action="store_true",
                   help="turn up logging to DEBUG (default is INFO)"),
-    config.Option("-q", "--quiet",
-                  default=False,
-                  action="store_true",
-                  help="turn down logging to WARN (default is INFO)"),
 ]
 
 getLogger = logging.getLogger  # pylint: disable=C0103
@@ -119,8 +110,8 @@ def _get_debug_formatter(conf):
 
     :param conf: configurtration namespace (ex. argparser)
 
-    --debug: log line numbers and file data also
-    --verbose: standard debug
+    --debug: log line numbers, file data
+    --verbose: standard log format at a DEBUG loglevel
     --quiet: turn down logging output (logging.WARNING)
     default is logging.INFO
     """

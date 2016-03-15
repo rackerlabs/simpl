@@ -354,6 +354,12 @@ class Config(collections.MutableMapping):
         :param parser_kwargs: kwargs used to init argparse parsers.
         :param argv: argument strings (defaults to sys.argv)
         """
+        # de-dupe (this helps when using log.py and server.py)
+        options = options or []
+        for option in options:
+            while options.count(option) != 1:
+                options.remove(option)
+
         self._parser_kwargs = parser_kwargs or {}
         self._ini_paths = ini_paths or []
         self._ini_paths = [normalized_path(x) for x in self._ini_paths]
@@ -879,6 +885,28 @@ def comma_separated_pairs(value):
 def parse_key_format(value):
     """Handle string formats of key files."""
     return value.strip("'").replace('\\n', '\n')
+
+
+OPTIONS = {
+    'debug': Option(
+        "-d", "--debug",
+        default=False,
+        action="store_true",
+        help="turn on additional debugging inspection and "
+             "output including full HTTP requests and responses. "
+             "Log output includes source file path and line "
+             "numbers. Runs server in debug mode which may return "
+             "tracebacks in response body. "
+    ),
+    'quiet': Option(
+        "-q", "--quiet",
+        default=False,
+        action="store_true",
+        help="turn down logging to WARN (default is INFO) "
+             "and run application in quiet mode"
+    )
+}
+
 
 SINGLETON = None
 

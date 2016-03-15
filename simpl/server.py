@@ -14,13 +14,17 @@
 
 """Bottle Server Module."""
 
+from __future__ import print_function
+
 import copy
 import logging
+import operator
 import os
 import sys
 import textwrap
 
 import bottle
+import six
 
 from simpl import config
 from simpl.utils import cli as cli_utils
@@ -59,26 +63,8 @@ OPTIONS = [
         default='xtornado',
         group='Server Options',
     ),
-    config.Option(
-        '--debug-server',
-        help=_fill(
-            'Run bottle server with debug=True which is useful for '
-            'development or troubleshooting. Warning: This may expose raw '
-            'tracebacks and unmodified error messages in responses! Note: '
-            'this is not an option to configure DEBUG level logging.'),
-        default=False,
-        action='store_true',
-        group='Server Options',
-    ),
-    config.Option(
-        '--quiet-server',
-        help=_fill(
-            'Suppress bottle\'s output to stdout and stderr, e.g. '
-            '"Bottle v0.12.8 server starting up..." and others.'),
-        default=False,
-        action='store_true',
-        group='Server Options',
-    ),
+    config.OPTIONS['debug'],
+    config.OPTIONS['quiet'],
     config.Option(
         '--no-reloader',
         default=True,
@@ -307,8 +293,8 @@ def run(conf):
             port=conf.port,
             interval=conf.interval,
             reloader=conf.reloader,
-            quiet=conf.quiet_server,
-            debug=conf.debug_server,
+            quiet=conf.quiet,
+            debug=conf.debug,
             **options
         )
     except KeyboardInterrupt:
