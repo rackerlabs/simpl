@@ -12,8 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import eventlet
-eventlet.monkey_patch()
+
+def setUpModule():
+    import eventlet
+    eventlet.monkey_patch(os=True)
+
+def tearDownModule():
+    # unpatch
+    import imp
+    import os  # noqa
+    import sys
+
+    import eventlet
+
+    imp.acquire_lock()
+    try:
+        sys.modules['os'] = eventlet.patcher.original('os')
+    finally:
+        imp.release_lock()
+
 
 import logging
 import multiprocessing
