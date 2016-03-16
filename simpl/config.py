@@ -176,7 +176,7 @@ try:
     import keyring
 except ImportError:
     keyring = None  # pylint: disable=C0103
-from six.moves import configparser
+from six.moves import configparser  # pylint: disable=wrong-import-order
 
 LOG = logging.getLogger(__name__)
 

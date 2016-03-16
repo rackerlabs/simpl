@@ -24,7 +24,7 @@ import sys
 import textwrap
 
 import bottle
-import six
+import six  # pylint: disable=wrong-import-order
 
 import simpl
 
@@ -299,7 +299,7 @@ def fmt_pairs(obj, indent=4, sort_key=None):
         return ''
     longest = max(lengths)
     obj = sorted(obj, key=sort_key)
-    formatter = '%s{: <%d} {}' % (' '*indent, longest)
+    formatter = '%s{: <%d} {}' % (' ' * indent, longest)
     string = '\n'.join([formatter.format(k, v) for k, v in obj])
     return string
 
@@ -320,6 +320,7 @@ def _version_callback():
         'version': simpl.__version__,
         'url': simpl.__url__,
     }
+
 
 def build_app(conf):
     """Do some setup and return the wsgi app."""

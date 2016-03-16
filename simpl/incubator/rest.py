@@ -17,8 +17,8 @@
 import traceback
 
 import bottle
-import six
-import voluptuous as volup
+import six  # pylint: disable=wrong-import-order
+import voluptuous as volup  # pylint: disable=wrong-import-order
 
 from simpl import rest as simpl_rest
 
@@ -121,7 +121,7 @@ def coerce_many(schema=str):
     return validate
 
 
-def schema(body_schema=None, body_required=False, query_schema=None,
+def schema(body_schema=None, body_required=False, query_schema=None,  # noqa
            content_types=None, default_body=None):
     """Decorator to parse and validate API body and query string.
 
@@ -184,7 +184,7 @@ def schema(body_schema=None, body_required=False, query_schema=None,
                         raise MultiValidationError(exc.errors)
 
                 # validate the query string per the schema (if application):
-                query = bottle.request.query.dict
+                query = bottle.request.query.dict  # pylint: disable=no-member
                 if query_schema is not None:
                     try:
                         query = query_schema(query)

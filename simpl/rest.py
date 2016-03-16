@@ -23,7 +23,7 @@ import traceback
 
 import bottle
 try:
-    import yaml
+    import yaml  # pylint: disable=wrong-import-order
 except ImportError:
     yaml = None
 
