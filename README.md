@@ -8,6 +8,7 @@ Common Python libraries for:
 - [Logging](#logging)
 - [Secrets](#secrets)
 - [Python Utilites](#python)
+- [Servers](#server)
 - [WSGI Middleware](#middleware)
 - [REST API Tooling](#rest)
 - [Date/Time (chronos)](#chronos)
@@ -37,6 +38,13 @@ Helpers for managing sensitive values.
 Code we wished was built in to python (or was simpler to use):
 - dictionary and list merging
 - dictionary get/set/in by path
+
+
+## <a name="server"></a>Running a web service
+
+- Perform standard webserver configuration (address, port, server adapter, etc.) using the [config](#config) module
+- Run the bottle-based webservice using this configuration
+
 
 ## <a name="middleware"></a>WSGI middleware
 

@@ -14,9 +14,13 @@
 
 """Incubator utilities for :mod:`simpl.rest`."""
 
+import traceback
+
 import bottle
-import six
-import voluptuous as volup
+import six  # pylint: disable=wrong-import-order
+import voluptuous as volup  # pylint: disable=wrong-import-order
+
+from simpl import rest as simpl_rest
 
 
 class MultiValidationError(Exception):
@@ -117,7 +121,7 @@ def coerce_many(schema=str):
     return validate
 
 
-def schema(body_schema=None, body_required=False, query_schema=None,
+def schema(body_schema=None, body_required=False, query_schema=None,  # noqa
            content_types=None, default_body=None):
     """Decorator to parse and validate API body and query string.
 
@@ -157,11 +161,22 @@ def schema(body_schema=None, body_required=False, query_schema=None,
             """Validate/coerce request body and parameters."""
             try:
                 # validate the request body per the schema (if applicable):
-                body = bottle.request.json
+                try:
+                    body = bottle.request.json
+                except ValueError as exc:
+                    raise simpl_rest.HTTPError(
+                        body=str(exc),
+                        status=400,
+                        exception=exc,
+                        traceback=traceback.format_exc(),
+                    )
                 if body is None:
                     body = default_body
                 if body_required and not body:
-                    bottle.abort(400, 'Call body cannot be empty')
+                    raise simpl_rest.HTTPError(
+                        body='Request body cannot be empty.',
+                        status=400,
+                    )
                 if body_schema:
                     try:
                         body = body_schema(body)
@@ -169,7 +184,7 @@ def schema(body_schema=None, body_required=False, query_schema=None,
                         raise MultiValidationError(exc.errors)
 
                 # validate the query string per the schema (if application):
-                query = bottle.request.query.dict
+                query = bottle.request.query.dict  # pylint: disable=no-member
                 if query_schema is not None:
                     try:
                         query = query_schema(query)
@@ -179,14 +194,21 @@ def schema(body_schema=None, body_required=False, query_schema=None,
                     # If the query dict is empty, just set it to None.
                     query = None
 
-                # Pass `body` and `query` as kwargs to the decorated function.
+                # Conditionally add 'body' or 'schema' to kwargs.
+                if any([body_schema, body_required, default_body]):
+                    kwargs['body'] = body
+                if query_schema:
+                    kwargs['query'] = query
                 return func(
                     *args,
-                    body=body,
-                    query=query,
                     **kwargs
                 )
-            except Exception as exc:
-                bottle.abort(400, str(exc))
+            except MultiValidationError as exc:
+                raise simpl_rest.HTTPError(
+                    body=str(exc),
+                    status=400,
+                    exception=exc,
+                    traceback=traceback.format_exc(),
+                )
         return wrapped
     return deco

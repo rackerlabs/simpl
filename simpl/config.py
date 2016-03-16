@@ -176,7 +176,7 @@ try:
     import keyring
 except ImportError:
     keyring = None  # pylint: disable=C0103
-from six.moves import configparser
+from six.moves import configparser  # pylint: disable=wrong-import-order
 
 LOG = logging.getLogger(__name__)
 
@@ -347,13 +347,19 @@ class Config(collections.MutableMapping):
     """Parses configuration sources."""
 
     def __init__(self, options=None, ini_paths=None, argv=None,
-                 **parser_kwargs):
+                 argparser_class=argparse.ArgumentParser, **parser_kwargs):
         """Initialize with list of options.
 
         :param ini_paths: optional paths to ini files to look up values from
         :param parser_kwargs: kwargs used to init argparse parsers.
         :param argv: argument strings (defaults to sys.argv)
         """
+        # de-dupe (this helps when using log.py and server.py)
+        options = options or []
+        for option in options:
+            while options.count(option) != 1:
+                options.remove(option)
+
         self._parser_kwargs = parser_kwargs or {}
         self._ini_paths = ini_paths or []
         self._ini_paths = [normalized_path(x) for x in self._ini_paths]
@@ -362,7 +368,8 @@ class Config(collections.MutableMapping):
                         for option in self._options}
         self._argv = argv
         self._metaconfigure(argv=self._argv)
-        self._parser = argparse.ArgumentParser(**parser_kwargs)
+        self._parser_class = argparser_class
+        self._parser = self._parser_class(**parser_kwargs)
         self._prog = None
         self.ini_config = None
         self.pass_thru_args = []
@@ -446,7 +453,7 @@ class Config(collections.MutableMapping):
             raise AttributeError("'config' object has no attribute '%s'"
                                  % attr)
 
-    def build_parser(self, options, permissive=False, **override_kwargs):
+    def build_parser(self, options=None, permissive=False, **override_kwargs):
         """Construct an argparser from supplied options.
 
         :keyword override_kwargs: keyword arguments to override when calling
@@ -460,10 +467,16 @@ class Config(collections.MutableMapping):
         kwargs.update(override_kwargs)
         if 'fromfile_prefix_chars' not in kwargs:
             kwargs['fromfile_prefix_chars'] = '@'
-        parser = argparse.ArgumentParser(**kwargs)
-        if options:
-            for option in options:
-                option.add_argument(parser, permissive=permissive)
+        parser = self._parser_class(**kwargs)
+        if options is None:
+            options = []
+            for _opt in self._options:
+                _kw = _opt.kwargs.copy()
+                if _kw.get('default') is None:
+                    _kw['default'] = argparse.SUPPRESS
+                options.append(Option(*_opt.args, **_kw))
+        for option in options:
+            option.add_argument(parser, permissive=permissive)
         return parser
 
     def cli_values(self, argv):
@@ -872,6 +885,28 @@ def comma_separated_pairs(value):
 def parse_key_format(value):
     """Handle string formats of key files."""
     return value.strip("'").replace('\\n', '\n')
+
+
+OPTIONS = {
+    'debug': Option(
+        "-d", "--debug",
+        default=False,
+        action="store_true",
+        help="turn on additional debugging inspection and "
+             "output including full HTTP requests and responses. "
+             "Log output includes source file path and line "
+             "numbers. Runs server in debug mode which may return "
+             "tracebacks in response body. "
+    ),
+    'quiet': Option(
+        "-q", "--quiet",
+        default=False,
+        action="store_true",
+        help="turn down logging to WARN (default is INFO) "
+             "and run application in quiet mode"
+    )
+}
+
 
 SINGLETON = None
 

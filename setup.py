@@ -47,10 +47,16 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.4',
 ]
 
+ENTRY_POINTS = {
+    'console_scripts': ['simpl=simpl.cli:main'],
+}
+
+
 package_attributes = {
     'name': about['__title__'],
     'description': about['__summary__'],
     'keywords': ' '.join(about['__keywords__']),
+    'entry_points': ENTRY_POINTS,
     'version': about['__version__'],
     'tests_require': TESTS_REQUIRE,
     'test_suite': 'tests',

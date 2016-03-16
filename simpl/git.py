@@ -338,9 +338,12 @@ def git_fetch(repo_dir, remote=None, refspec=None, verbose=False, tags=True):
     return execute_git_command(command, repo_dir=repo_dir)
 
 
-def git_pull(repo_dir, remote="origin", ref=None):
+def git_pull(repo_dir, remote="origin", ref=None, update_head_ok=False):
     """Do a git pull of `ref` from `remote`."""
-    command = ['git', 'pull', '--update-head-ok', pipes.quote(remote)]
+    command = ['git', 'pull']
+    if update_head_ok:
+        command.append('--update-head-ok')
+    command.append(pipes.quote(remote))
     if ref:
         command.append(ref)
     return execute_git_command(command, repo_dir=repo_dir)
