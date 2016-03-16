@@ -324,17 +324,17 @@ def _version_callback():
 def build_app(conf):
     """Do some setup and return the wsgi app."""
     if isinstance(conf.adapter_options, list):
-        conf.adapter_options = {key: val for _dict in conf.adapter_options
-                                for key, val in _dict.items()}
+        conf['adapter_options'] = {key: val for _dict in conf.adapter_options
+                                   for key, val in _dict.items()}
     elif conf.adapter_options is None:
-        conf.adapter_options = {}
+        conf['adapter_options'] = {}
     else:
-        conf.adapter_options = copy.copy(conf.adapter_options)
+        conf['adapter_options'] = copy.copy(conf.adapter_options)
 
     # get wsgi app the same way bottle does if it receives a string.
-    conf.app = conf.app or bottle.default_app()
+    conf['app'] = conf.app or bottle.default_app()
     if isinstance(conf.app, six.string_types):
-        conf.app = bottle.load_app(conf.app)
+        conf['app'] = bottle.load_app(conf.app)
     conf.app.route(path='/_simpl', method='GET', callback=_version_callback)
 
     if os.getenv('BOTTLE_CHILD'):
@@ -355,7 +355,7 @@ def run(conf):
 
     Expects configuration options defined in server.OPTIONS
     """
-    conf.app = build_app(conf)
+    conf['app'] = build_app(conf)
     # waiting for https://github.com/bottlepy/bottle/pull/783
     if conf.app and (os.getcwd() not in sys.path):
         sys.path.append(os.getcwd())
