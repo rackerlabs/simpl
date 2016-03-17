@@ -911,7 +911,8 @@ OPTIONS = {
 SINGLETON = None
 
 
-def init(options=None, ini_paths=None, argv=None, strict=False):
+def init(options=None, ini_paths=None, argv=None,
+         strict=False, **parser_kwargs):
     """Initialize singleton config and read/parse configuration.
 
     :keyword bool strict: when true, will error out on invalid arguments
@@ -922,7 +923,8 @@ def init(options=None, ini_paths=None, argv=None, strict=False):
     SINGLETON = Config(
         options=options,
         ini_paths=ini_paths,
-        argv=argv)
+        argv=argv,
+        **parser_kwargs)
     SINGLETON.parse(argv, strict=strict)
     return SINGLETON
 
