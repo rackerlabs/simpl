@@ -33,7 +33,11 @@ from simpl.utils import cli as cli_utils
 
 LOG = logging.getLogger(__name__)
 
-_fill = lambda text: textwrap.fill(text, 50)
+
+def _fill(text):
+    """Make a pretty text block."""
+    return textwrap.fill(text, 50)
+
 
 OPTIONS = [
     config.Option(
@@ -322,7 +326,7 @@ def _version_callback():
     }
 
 
-def build_app(conf):
+def build_application(conf):
     """Do some setup and return the wsgi app."""
     if isinstance(conf.adapter_options, list):
         conf['adapter_options'] = {key: val for _dict in conf.adapter_options
@@ -336,27 +340,49 @@ def build_app(conf):
     conf['app'] = conf.app or bottle.default_app()
     if isinstance(conf.app, six.string_types):
         conf['app'] = bottle.load_app(conf.app)
-    conf.app.route(path='/_simpl', method='GET', callback=_version_callback)
 
-    if os.getenv('BOTTLE_CHILD'):
-        if conf.reloader:
-            LOG.info("Running bottle server with reloader.")
+    def _find_bottle_app(_app):
+        """Lookup the underlying Bottle() instance."""
+        while hasattr(_app, 'app'):
+            if isinstance(_app, bottle.Bottle):
+                break
+            _app = _app.app
+        assert isinstance(_app, bottle.Bottle), 'Could not find Bottle app.'
+        return _app
+
+    bottle_app = _find_bottle_app(conf.app)
+    bottle_app.route(
+        path='/_simpl', method='GET', callback=_version_callback)
+
+    def _show_routes():
+        """Conditionally print the app's routes."""
         if conf.app and not conf.quiet:
-            try:
-                routes = fmt_routes(conf.app)
-                if routes:
-                    print('\n{}'.format(fmt_routes(conf.app)), end='\n\n')
-            except AttributeError:
+            if conf.reloader and os.getenv('BOTTLE_CHILD'):
+                LOG.info("Running bottle server with reloader.")
+            elif not conf.reloader:
                 pass
+            else:
+                return
+            routes = fmt_routes(bottle_app)
+            if routes:
+                    print('\n{}'.format(routes), end='\n\n')
+    _show_routes()
     return conf.app
 
 
-def run(conf):
+def run(conf, build_app=True):
     """Run server based on this configuration.
+
+    If build_app is True, simpl will use your config to build
+    and configure your wsgi application. If you have built and
+    configured your application (conf.app) already, set build_app
+    to false.
 
     Expects configuration options defined in server.OPTIONS
     """
-    conf['app'] = build_app(conf)
+    if build_app:
+        # The following sets conf.app
+        build_application(conf)
     # waiting for https://github.com/bottlepy/bottle/pull/783
     if conf.app and (os.getcwd() not in sys.path):
         sys.path.append(os.getcwd())
