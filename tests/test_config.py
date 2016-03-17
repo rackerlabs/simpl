@@ -569,5 +569,42 @@ class TestConfigPrecedence(unittest.TestCase):
         self.assertEqual(res.blarg, 'baz')
 
 
+class TestConfigModuleEncapsulation(unittest.TestCase):
+
+    def setUp(self):
+        self.opts = [
+            config.Option(
+                '--foo',
+                required=True,
+                default='bar',
+            ),
+            config.Option(
+                '--blarg',
+                required=True,
+                default='baz',
+            ),
+        ]
+
+        self.conf = config.init(
+            options=self.opts,
+            prog='hello_prog',
+        )
+
+    @mock.patch.dict(config.os.environ, {})
+    def test_case_1(self):
+        # Test that defaults are used if no env or cli source of the option are
+        # present.
+        res = self.conf.parse(argv=['test.py'])
+        self.assertEqual(res.foo, 'bar')
+        self.assertEqual(res.blarg, 'baz')
+
+    @mock.patch.dict(config.os.environ, {'HELLO_PROG_FOO': 'helloprogfooenv'})
+    def test_case_2(self):
+        # Test that cli args override the defaults.
+        res = self.conf.parse(argv=['test.py', '--blarg', 'fromcli'])
+        self.assertEqual(res.foo, 'helloprogfooenv')
+        self.assertEqual(res.blarg, 'fromcli')
+
+
 if __name__ == '__main__':
     unittest.main()
