@@ -8,6 +8,7 @@ mongobox
 nose
 nose-ignore-docstring
 prettyprint
+pycodestyle
 pylint
 pyyaml
 requests

@@ -577,7 +577,7 @@ class Config(collections.MutableMapping):
         results = {}
         if not namespace:
             namespace = self.prog
-        namespace = namespace.upper()
+        namespace = namespace.upper()  # pylint: disable=no-member
         for option in self._options:
             env_var = option.kwargs.get('env')
             default_env = "%s_%s" % (namespace, option.name.upper())

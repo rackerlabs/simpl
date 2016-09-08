@@ -321,8 +321,8 @@ def fmt_routes(bottle_app):
 def _version_callback():
     """Return a dict of simpl version info."""
     return {
-        'version': simpl.__version__,
-        'url': simpl.__url__,
+        'version': simpl.__version__,  # pylint: disable=no-member
+        'url': simpl.__url__,  # pylint: disable=no-member
     }
 
 

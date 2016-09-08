@@ -24,7 +24,6 @@ from simpl import rest as simpl_rest
 
 
 class MultiValidationError(Exception):
-
     """Basically a re-imagining of a `voluptuous.MultipleInvalid` error.
 
     Reformats multiple errors messages for easy debugging of invalid
@@ -32,7 +31,7 @@ class MultiValidationError(Exception):
     """
 
     def __init__(self, errors):
-        """MultiValidationError constructor.
+        """Constructor of MultiValidationError class.
 
         :param errors:
             List of `voluptuous.Invalid` or `voluptuous.MultipleInvalid`
