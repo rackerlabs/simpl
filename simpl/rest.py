@@ -71,7 +71,7 @@ def body(schema=None, types=None, required=False, default=None):
                 except Exception as exc:
                     bottle.abort(400, str(exc))
             return fxn(data, *args, **kwargs)
-        return wrapped
+        return functools.wraps(fxn)(wrapped)
     return wrap
 
 

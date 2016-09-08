@@ -56,3 +56,6 @@ target/
 
 # Ignore .idea/ dir that gets created
 .idea/
+
+# MacOS folder metadata
+.DS_Store

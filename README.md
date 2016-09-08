@@ -1,5 +1,5 @@
 # simpl
-[![Build Status](https://travis-ci.org/checkmate/simpl.svg?branch=master)](https://travis-ci.org/checkmate/simpl)
+[![Build Status](https://travis-ci.org/rackerlabs/simpl.svg?branch=master)](https://travis-ci.org/rackerlabs/simpl)
 [![Coverage Status](https://coveralls.io/repos/checkmate/simpl/badge.svg?branch=master)](https://coveralls.io/r/checkmate/simpl?branch=master)
 
 Common Python libraries for:
@@ -82,4 +82,4 @@ that works with the [rest][#rest] module and supports query param filtering
 
 | Branch        | Status  |
 | ------------- | ------------- |
-| [master](https://github.com/checkmate/simpl/tree/master)  | [![Build Status](https://travis-ci.org/checkmate/simpl.svg?branch=master)](https://travis-ci.org/checkmate/simpl)  |
+| [master](https://github.com/rackerlabs/simpl/tree/master)  | [![Build Status](https://travis-ci.org/rackerlabs/simpl.svg?branch=master)](https://travis-ci.org/rackerlabs/simpl)  |

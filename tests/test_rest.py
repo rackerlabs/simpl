@@ -32,6 +32,7 @@ class TestBodyDecorator(unittest.TestCase):
     def test_decoration(self):
         """Test decorated function is called."""
         mock_handler = mock.Mock(return_value='X')
+        mock_handler.__name__ = 'mock_handler'
         decorated = rest.body()(mock_handler)
         self.assertTrue(callable(decorated))
         self.assertEqual(decorated('arg', kwarg=2), 'X')
@@ -43,6 +44,7 @@ class TestBodyDecorator(unittest.TestCase):
         data = "100"
         mock_request.json = data
         mock_handler = mock.Mock()
+        mock_handler.__name__ = 'mock_handler'
         route = rest.body(schema=int)(mock_handler)
         route()
         mock_handler.assert_called_once_with(int(data))
@@ -52,6 +54,7 @@ class TestBodyDecorator(unittest.TestCase):
         """Test schema is enforced."""
         mock_request.json = 'ALPHA'
         mock_handler = mock.Mock()
+        mock_handler.__name__ = 'mock_handler'
         route = rest.body(schema=int)(mock_handler)
         with self.assertRaises(bottle.HTTPError):
             route()
@@ -61,6 +64,7 @@ class TestBodyDecorator(unittest.TestCase):
         """Test invalid data is handled gracefully."""
         type(mock_request).json = mock.PropertyMock(side_effect=ValueError)
         mock_handler = mock.Mock()
+        mock_handler.__name__ = 'mock_handler'
         route = rest.body(schema=int)(mock_handler)
         with self.assertRaises(bottle.HTTPError):
             route()
@@ -71,6 +75,7 @@ class TestBodyDecorator(unittest.TestCase):
         type(mock_request).json = mock.PropertyMock(
             side_effect=UnicodeDecodeError('ascii', b'', 0, 1, 'bad'))
         mock_handler = mock.Mock()
+        mock_handler.__name__ = 'mock_handler'
         route = rest.body(schema=int)(mock_handler)
         with self.assertRaises(bottle.HTTPError):
             route()
@@ -80,6 +85,7 @@ class TestBodyDecorator(unittest.TestCase):
         """Test required is enforced."""
         mock_request.json = None
         mock_handler = mock.Mock()
+        mock_handler.__name__ = 'mock_handler'
         route = rest.body(required=True)(mock_handler)
         with self.assertRaises(bottle.HTTPError) as context:
             route()
@@ -90,6 +96,7 @@ class TestBodyDecorator(unittest.TestCase):
         """Test default is returned (and schema is applied to it)."""
         mock_request.json = None
         mock_handler = mock.Mock()
+        mock_handler.__name__ = 'mock_handler'
         route = rest.body(default='100', schema=int)(mock_handler)
         route()
         mock_handler.assert_called_once_with(100)
