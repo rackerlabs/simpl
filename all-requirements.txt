@@ -1,7 +1,7 @@
 # Requirements that are required by optional components
 
 # For simpl.rest
-bottle==0.12.8
+bottle==0.12.19
 voluptuous==0.8.7
 
 # For simpl.server
