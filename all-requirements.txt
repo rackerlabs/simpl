@@ -6,7 +6,7 @@ voluptuous==0.8.7
 
 # For simpl.server
 eventlet==0.17.4
-tornado==4.2
+tornado==6.3.3
 
 # For simpl.middleware.cors
 WebOb==1.4.1
